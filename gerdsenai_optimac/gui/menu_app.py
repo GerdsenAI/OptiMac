@@ -33,7 +33,7 @@ from gerdsenai_optimac.gui.monitors import (
     AppleSiliconMonitor,
     NetworkMonitor,
 )
-from gerdsenai_optimac.gui.dialogs import show_result
+from gerdsenai_optimac.gui.dialogs import show_result, set_terminal_widget
 from gerdsenai_optimac.gui.icons import get_icon
 from gerdsenai_optimac.gui.terminal_widget import TerminalWidget
 
@@ -82,9 +82,13 @@ class OptiMacMenuBar(rumps.App):
 
         # Terminal widget (floating mini-terminal)
         self.terminal = TerminalWidget()
+        set_terminal_widget(self.terminal)
 
         # Build menu structure
         self._build_menu()
+
+        # Sync toggle text when panel is closed via ✕
+        self.terminal.set_on_close(self._on_terminal_closed)
 
     def _setup_icon(self):
         """Generate a template icon (black silhouette with alpha)."""
@@ -344,6 +348,10 @@ class OptiMacMenuBar(rumps.App):
             sender.title = "Hide Terminal"
         else:
             sender.title = "Show Terminal"
+
+    def _on_terminal_closed(self):
+        """Called when the terminal panel is closed via ✕ button."""
+        self.terminal_toggle.title = "Show Terminal"
 
     def _quit(self, _):
         self._monitoring = False

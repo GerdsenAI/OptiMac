@@ -16,6 +16,8 @@ import subprocess
 import threading
 from datetime import datetime
 
+from gerdsenai_optimac.gui import themes
+
 try:
     from AppKit import (
         NSPanel,
@@ -33,22 +35,32 @@ try:
         NSResizableWindowMask,
         NSMiniaturizableWindowMask,
         NSBackingStoreBuffered,
+        NSForegroundColorAttributeName,
+        NSFontAttributeName,
     )
-    from Foundation import NSObject
+    from Foundation import NSObject, NSRange
 
     HAS_APPKIT = True
 except ImportError:
     HAS_APPKIT = False
 
 
-# Colors from themes.py
-_BG = (0.0, 0.0, 0.0, 0.92)  # Near-black with slight transparency
-_FG = (0.0, 1.0, 0.0, 1.0)  # Matrix green
-_FG_DIM = (0.0, 0.4, 0.0, 1.0)  # Dimmed green
-_ACCENT = (0.0, 0.8, 0.0, 1.0)  # Accent green
-_FONT_NAME = "Menlo"
-_FONT_SIZE = 11.0
-_HEADER_FONT_SIZE = 12.0
+# ── Theme color helpers ──────────────────────────────────────────────
+
+
+def _hex_to_rgba(hex_str, alpha=1.0):
+    """Convert hex color string to RGBA tuple (0.0–1.0)."""
+    h = hex_str.lstrip("#")
+    r, g, b = int(h[0:2], 16) / 255.0, int(h[2:4], 16) / 255.0, int(h[4:6], 16) / 255.0
+    return (r, g, b, alpha)
+
+
+_BG = _hex_to_rgba(themes.BG_COLOR, 0.92)
+_FG = _hex_to_rgba(themes.FG_COLOR)
+_FG_DIM = _hex_to_rgba(themes.FG_DIM)
+_ACCENT = _hex_to_rgba(themes.ACCENT_COLOR)
+_FONT_NAME = themes.FONT_FAMILY
+_FONT_SIZE = float(themes.FONT_SIZE)
 
 
 class TerminalWidget:
@@ -70,6 +82,8 @@ class TerminalWidget:
         self._history_index = -1
         self._visible = False
         self._delegate = None
+        self._close_delegate = None
+        self._on_close_callback = None
 
         if HAS_APPKIT:
             self._build()
@@ -92,6 +106,10 @@ class TerminalWidget:
         self._panel.setFloatingPanel_(True)
         self._panel.setBecomesKeyOnlyIfNeeded_(True)
         self._panel.setMinSize_((360, 200))
+
+        # Delegate for close-button sync
+        self._close_delegate = _PanelCloseDelegate.alloc().initWithWidget_(self)
+        self._panel.setDelegate_(self._close_delegate)
 
         # Background color
         bg_color = NSColor.colorWithCalibratedRed_green_blue_alpha_(*_BG)
@@ -174,9 +192,13 @@ class TerminalWidget:
         self._append_styled(
             "OptiMac Terminal v1.0\n"
             "Type a command or use menu actions.\n"
-            "─" * 40 + "\n",
+            "\u2500" * 40 + "\n",
             color=_FG_DIM,
         )
+
+    def set_on_close(self, callback):
+        """Register a callback invoked when the panel is closed via ✕."""
+        self._on_close_callback = callback
 
     def show(self):
         """Show and focus the terminal widget."""
@@ -229,11 +251,9 @@ class TerminalWidget:
         if not HAS_APPKIT or not self._text_view:
             return
         storage = self._text_view.textStorage()
-        full_range = storage.mutableString().length()
-        if full_range > 0:
-            from Foundation import NSRange
-
-            storage.deleteCharactersInRange_(NSRange(0, full_range))
+        length = storage.mutableString().length()
+        if length > 0:
+            storage.deleteCharactersInRange_(NSRange(0, length))
 
     def run_shell(self, command):
         """Run a shell command and pipe output to the widget."""
@@ -279,24 +299,32 @@ class TerminalWidget:
         elif cmd.lower() == "help":
             self._append_styled(
                 "\nAvailable commands:\n"
-                "  clear    — Clear terminal output\n"
-                "  help     — Show this message\n"
+                "  clear    -- Clear terminal output\n"
+                "  help     -- Show this message\n"
                 "  Any other input runs as a shell command.\n\n",
                 color=_FG_DIM,
             )
         else:
             self.run_shell(cmd)
 
+    def _handle_panel_close(self):
+        """Called by the close delegate when panel ✕ is clicked."""
+        self._visible = False
+        if self._on_close_callback:
+            self._on_close_callback()
+
     def _append_styled(self, text, color=_FG):
         """Append attributed string to the text view."""
         if not self._text_view:
             return
         try:
-            from Foundation import NSAttributedString, NSRange
+            from Foundation import NSAttributedString
 
             attrs = {
-                "NSColor": NSColor.colorWithCalibratedRed_green_blue_alpha_(*color),
-                "NSFont": NSFont.fontWithName_size_(_FONT_NAME, _FONT_SIZE),
+                NSForegroundColorAttributeName: NSColor.colorWithCalibratedRed_green_blue_alpha_(
+                    *color
+                ),
+                NSFontAttributeName: NSFont.fontWithName_size_(_FONT_NAME, _FONT_SIZE),
             }
             attr_str = NSAttributedString.alloc().initWithString_attributes_(
                 text, attrs
@@ -334,5 +362,19 @@ if HAS_APPKIT:
         def runCommand_(self, sender):
             self._widget._handle_command()
 
+    class _PanelCloseDelegate(NSObject):
+        """Delegate that syncs visibility state when panel is closed via ✕."""
+
+        def initWithWidget_(self, widget):
+            self = self.init()
+            if self is None:
+                return None
+            self._widget = widget
+            return self
+
+        def windowWillClose_(self, notification):
+            self._widget._handle_panel_close()
+
 else:
     _TerminalDelegate = None
+    _PanelCloseDelegate = None

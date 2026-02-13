@@ -9,6 +9,7 @@ from gerdsenai_optimac.gui.dialogs import (
     show_result,
     confirm_action,
     StatusProgress,
+    notify_action,
 )
 from gerdsenai_optimac.gui.sudo import run_privileged
 from gerdsenai_optimac.gui.icons import get_icon
@@ -338,17 +339,20 @@ def lock_screen(app):
             "displaysleepnow",
         ]
     )
+    notify_action("Lock Screen", "Display locked", app.status_item)
 
 
 def restart_finder(app):
     progress = StatusProgress(app.status_item, "Finder")
-    progress.update("Restarting Finder…")
+    progress.update("Restarting Finder...")
     run_command(["killall", "Finder"])
     progress.finish("Finder restarted")
+    notify_action("Finder", "Restarted successfully")
 
 
 def restart_dock(app):
     progress = StatusProgress(app.status_item, "Dock")
-    progress.update("Restarting Dock…")
+    progress.update("Restarting Dock...")
     run_command(["killall", "Dock"])
     progress.finish("Dock restarted")
+    notify_action("Dock", "Restarted successfully")

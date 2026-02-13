@@ -59,7 +59,7 @@ def run_command_with_output(command, widget=None, callback=None, timeout=30):
     Execute a command and pipe output to a terminal widget.
 
     If widget is provided and visible, output streams there in real-time.
-    Otherwise falls back to callback(success, output) behavior.
+    The callback is always invoked on completion regardless of widget state.
 
     Args:
         command: Shell command string or list.
@@ -70,5 +70,14 @@ def run_command_with_output(command, widget=None, callback=None, timeout=30):
     if widget and widget.is_visible():
         cmd_str = command if isinstance(command, str) else " ".join(command)
         widget.run_shell(cmd_str)
+        # Still invoke callback — run_shell is async, so call with
+        # a threaded wrapper that waits for the command result
+        if callback:
+
+            def _wait_and_callback():
+                success, output = run_command(command, timeout=timeout)
+                callback(success, output)
+
+            threading.Thread(target=_wait_and_callback, daemon=True).start()
     else:
         run_command_threaded(command, callback=callback, timeout=timeout)

@@ -12,6 +12,17 @@ Uses rumps for simple dialogs and lightweight AppKit where needed.
 import rumps
 
 
+# ── Terminal Widget Reference ─────────────────────────────────────────
+
+_terminal_widget = None
+
+
+def set_terminal_widget(widget):
+    """Register the terminal widget so action output auto-pipes there."""
+    global _terminal_widget
+    _terminal_widget = widget
+
+
 # ── Informational Results ─────────────────────────────────────────────
 
 
@@ -37,6 +48,10 @@ def show_result(title, heading, body):
         dimensions=(440, 220),
     )
     w.run()
+
+    # Auto-pipe to terminal widget when visible
+    if _terminal_widget and _terminal_widget.is_visible():
+        _terminal_widget.append_action(title, body)
 
 
 # ── Confirmation Gates ────────────────────────────────────────────────
