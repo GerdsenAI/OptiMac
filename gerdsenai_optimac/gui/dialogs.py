@@ -91,9 +91,9 @@ class StatusProgress:
     def update(self, message, step=None, total=None):
         """Update the status item with current progress."""
         if step is not None and total is not None:
-            self._item.title = f"⏳ {self._task} ({step}/{total}): {message}"
+            self._item.title = f">> {self._task} ({step}/{total}): {message}"
         else:
-            self._item.title = f"⏳ {message}"
+            self._item.title = f">> {message}"
 
     def finish(self, message=None, restore=True):
         """
@@ -103,9 +103,9 @@ class StatusProgress:
         the original status text.
         """
         if message:
-            self._item.title = f"✓ {message}"
+            self._item.title = f"[OK] {message}"
         if restore:
-            # Restore after a beat so the user sees the checkmark
+            # Restore after a beat so the user sees the indicator
             import threading
 
             def _restore():
@@ -119,7 +119,7 @@ class StatusProgress:
     def fail(self, message=None):
         """Mark the operation as failed and restore status."""
         if message:
-            self._item.title = f"✗ {message}"
+            self._item.title = f"[FAIL] {message}"
         import threading
 
         def _restore():
@@ -127,5 +127,37 @@ class StatusProgress:
 
             time.sleep(3.0)
             self._item.title = self._original_title
+
+        threading.Thread(target=_restore, daemon=True).start()
+
+
+# ── Action Feedback ──────────────────────────────────────────────────
+
+
+def notify_action(title, message, status_item=None):
+    """
+    Provide instant feedback for completed actions.
+
+    1. Posts a macOS notification with the OptiMac icon.
+    2. Optionally flashes the status bar with a brief confirmation.
+
+    Args:
+        title: Notification title (e.g. "Wi-Fi").
+        message: Detail text (e.g. "Disabled successfully").
+        status_item: Optional rumps.MenuItem to flash status on.
+    """
+    rumps.notification("OptiMac", title, message)
+
+    if status_item:
+        original = status_item.title
+
+        status_item.title = f"[OK] {title}"
+        import threading
+
+        def _restore():
+            import time
+
+            time.sleep(2.0)
+            status_item.title = original
 
         threading.Thread(target=_restore, daemon=True).start()
