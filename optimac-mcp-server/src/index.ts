@@ -9,14 +9,15 @@
  * Transport: stdio (launched as subprocess by MCP client)
  * Config: ~/.optimac/config.json
  *
- * 46+ tools across 7 domains:
+ * 55 tools across 8 domains:
  *   - System Monitoring (6): memory, processes, disk, thermal, power, overview
  *   - System Control (13): purge, DNS, routes, power, power-optimize, spotlight, caches, set-dns, services, enable-service, network-reset, reduce-ui, kill-process
  *   - AI Stack (7): status, ollama start/stop/models, mlx start/stop, smart swap
- *   - Model Management (8): browse local models, ollama available, serve/load, unload, running models, model dir, RAM check, chat/inference
+ *   - Model Management (9): browse local models, ollama available, serve/load, unload, running models, model dir get/set, RAM check, chat/inference
  *   - Model Tasks (8): bidirectional AI bridge — task delegation, code review, file generation, file editing, summarization, git commit, cloud escalation, smart routing
  *   - Memory Pressure (2): pressure check with tiered response, full maintenance cycle
  *   - Configuration (6): get/set config, protect/unprotect processes, ports, debloat presets
+ *   - Autonomy (4): watchdog start/stop/status, audit log reading
  */
 
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
@@ -28,6 +29,7 @@ import { registerMemoryPressureTools } from "./tools/memory-pressure.js";
 import { registerConfigTools } from "./tools/config-tools.js";
 import { registerModelManagementTools } from "./tools/model-management.js";
 import { registerModelTaskTools } from "./tools/model-tasks.js";
+import { registerAutonomyTools } from "./tools/autonomy-tools.js";
 import { loadConfig } from "./services/config.js";
 
 const VERSION = "2.0.0";
@@ -58,8 +60,9 @@ async function main(): Promise<void> {
   registerConfigTools(server);
   registerModelManagementTools(server);
   registerModelTaskTools(server);
+  registerAutonomyTools(server);
 
-  console.error("All tools registered (46+ tools across 7 domains). Starting stdio transport...");
+  console.error("All tools registered (55 tools across 8 domains). Starting stdio transport...");
 
   // Connect via stdio
   const transport = new StdioServerTransport();
