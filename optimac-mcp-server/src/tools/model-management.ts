@@ -817,6 +817,40 @@ Args:
             modelName = lines[0].trim().split(/\s+/)[0];
           }
         }
+
+        // If no model is loaded, try to find the most recently used one and reload it
+        if (!modelName) {
+          const listResult = await runCommand("ollama", ["list"]);
+          if (listResult.exitCode === 0) {
+            const listLines = listResult.stdout.split("\n").filter(Boolean).slice(1);
+            if (listLines.length > 0) {
+              // Pick the first (most recently modified) model
+              const firstModel = listLines[0].trim().split(/\s+/)[0];
+              if (firstModel) {
+                // Quick-load: send a minimal request to force Ollama to load the model
+                await runCommand(
+                  `echo "/bye" | ollama run "${firstModel}"`,
+                  [],
+                  { shell: true, timeout: LONG_TIMEOUT }
+                );
+                modelName = firstModel;
+              }
+            }
+          }
+          if (!modelName) {
+            return {
+              content: [{
+                type: "text",
+                text: JSON.stringify({
+                  error: "NO_MODEL_LOADED",
+                  runtime: "ollama",
+                  message: "Ollama is running but no model is loaded and none are installed. Use optimac_model_serve to load a model first.",
+                }, null, 2),
+              }],
+              isError: true,
+            };
+          }
+        }
       }
       // For MLX / LM Studio, model name is usually auto-detected by the server
 
