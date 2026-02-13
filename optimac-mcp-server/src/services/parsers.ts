@@ -70,6 +70,15 @@ export function parseVmStat(vmStatOutput: string, sysctl: string): MemoryStats {
   if (usedPercent > 0.90) pressureLevel = "critical";
   else if (usedPercent > 0.75) pressureLevel = "warning";
 
+  // Parse swap usage from sysctl vm.swapusage
+  // Format: "vm.swapusage: total = 2048.00M  used = 123.45M  free = 1924.55M"
+  let swapUsedMB = 0;
+  const swapMatch = sysctl.match(/vm\.swapusage:.*used\s*=\s*([\d.]+)([MG])/i);
+  if (swapMatch) {
+    const val = parseFloat(swapMatch[1]);
+    swapUsedMB = swapMatch[2].toUpperCase() === "G" ? Math.round(val * 1024) : Math.round(val);
+  }
+
   return {
     pageSize,
     freePages: vals["pages_free"] ?? 0,
@@ -81,7 +90,7 @@ export function parseVmStat(vmStatOutput: string, sysctl: string): MemoryStats {
     purgeablePages: vals["pages_purgeable"] ?? 0,
     fileBacked: Math.round(fileBacked / (1024 * 1024)),
     anonymous: Math.round(anonymous / (1024 * 1024)),
-    swapUsedMB: 0, // Populated from sysctl vm.swapusage if available
+    swapUsedMB,
     totalPhysicalMB: totalMB,
     usedMB: Math.round(usedBytes / (1024 * 1024)),
     freeMB: Math.round(freeBytes / (1024 * 1024)),
