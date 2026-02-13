@@ -4,7 +4,7 @@
  *
  * A comprehensive MCP server for Mac Mini M4 / M4 Pro AI inference optimization.
  * Controls system resources, manages AI inference stacks, handles memory pressure,
- * and performs automated maintenance -- all accessible via Claude Desktop or Claude Code.
+ * and bridges local ↔ cloud inference as equal peers — accessible via any MCP client.
  *
  * Transport: stdio (launched as subprocess by MCP client)
  * Config: ~/.optimac/config.json
@@ -14,7 +14,7 @@
  *   - System Control (13): purge, DNS, routes, power, power-optimize, spotlight, caches, set-dns, services, enable-service, network-reset, reduce-ui, kill-process
  *   - AI Stack (7): status, ollama start/stop/models, mlx start/stop, smart swap
  *   - Model Management (8): browse local models, ollama available, serve/load, unload, running models, model dir, RAM check, chat/inference
- *   - Model Tasks (6): cloud-to-edge bridge -- task delegation, code review, file generation, file editing, summarization, git commit
+ *   - Model Tasks (8): bidirectional AI bridge — task delegation, code review, file generation, file editing, summarization, git commit, cloud escalation, smart routing
  *   - Memory Pressure (2): pressure check with tiered response, full maintenance cycle
  *   - Configuration (6): get/set config, protect/unprotect processes, ports, debloat presets
  */

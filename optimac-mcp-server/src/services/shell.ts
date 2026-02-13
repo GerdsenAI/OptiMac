@@ -25,34 +25,30 @@ export interface ShellResult {
 export async function runCommand(
   command: string,
   args: string[] = [],
-  options: { timeout?: number; sudo?: boolean; shell?: boolean } = {}
+  options: { timeout?: number; sudo?: boolean; shell?: boolean; cwd?: string } = {}
 ): Promise<ShellResult> {
   const timeout = options.timeout ?? DEFAULT_TIMEOUT;
+  const execOpts = {
+    timeout,
+    env: { ...process.env, PATH: "/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin" },
+    ...(options.cwd ? { cwd: options.cwd } : {}),
+  };
 
   try {
     if (options.sudo) {
       // sudo requires shell execution
       const fullCmd = `sudo ${command} ${args.join(" ")}`;
-      const { stdout, stderr } = await execAsync(fullCmd, {
-        timeout,
-        env: { ...process.env, PATH: "/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin" },
-      });
+      const { stdout, stderr } = await execAsync(fullCmd, execOpts);
       return { stdout: stdout.trim(), stderr: stderr.trim(), exitCode: 0 };
     }
 
     if (options.shell) {
       const fullCmd = `${command} ${args.join(" ")}`;
-      const { stdout, stderr } = await execAsync(fullCmd, {
-        timeout,
-        env: { ...process.env, PATH: "/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin" },
-      });
+      const { stdout, stderr } = await execAsync(fullCmd, execOpts);
       return { stdout: stdout.trim(), stderr: stderr.trim(), exitCode: 0 };
     }
 
-    const { stdout, stderr } = await execFileAsync(command, args, {
-      timeout,
-      env: { ...process.env, PATH: "/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin" },
-    });
+    const { stdout, stderr } = await execFileAsync(command, args, execOpts);
     return { stdout: stdout.trim(), stderr: stderr.trim(), exitCode: 0 };
   } catch (error: unknown) {
     const err = error as { stdout?: string; stderr?: string; code?: number | string; killed?: boolean };

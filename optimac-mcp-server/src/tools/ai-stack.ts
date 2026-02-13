@@ -7,32 +7,7 @@ import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z } from "zod";
 import { runCommand, LONG_TIMEOUT } from "../services/shell.js";
 import { loadConfig } from "../services/config.js";
-import { createConnection } from "node:net";
-
-async function checkPort(port: number, host = "127.0.0.1"): Promise<boolean> {
-  return new Promise((resolve) => {
-    const socket = createConnection({ port, host, timeout: 2000 });
-    socket.on("connect", () => {
-      socket.destroy();
-      resolve(true);
-    });
-    socket.on("error", () => resolve(false));
-    socket.on("timeout", () => {
-      socket.destroy();
-      resolve(false);
-    });
-  });
-}
-
-async function httpGet(url: string, timeout = 5000): Promise<{ status: number; body: string }> {
-  const result = await runCommand(
-    "curl",
-    ["-s", "-o", "-", "-w", "%{http_code}", "--max-time", String(timeout / 1000), url],
-  );
-  const body = result.stdout;
-  const statusCode = parseInt(body.slice(-3), 10);
-  return { status: isNaN(statusCode) ? 0 : statusCode, body: body.slice(0, -3) };
-}
+import { checkPort, httpGet, waitForPort } from "../services/net.js";
 
 export function registerAIStackTools(server: McpServer): void {
   // ---- AI STACK STATUS ----

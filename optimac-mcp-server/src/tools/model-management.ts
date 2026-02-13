@@ -11,7 +11,8 @@ import { z } from "zod";
 import { runCommand, LONG_TIMEOUT } from "../services/shell.js";
 import { loadConfig, saveConfig } from "../services/config.js";
 import { parseVmStat } from "../services/parsers.js";
-import { createConnection } from "node:net";
+import { checkPort } from "../services/net.js";
+import { inferLocal } from "../services/inference.js";
 import { readdirSync, statSync, existsSync } from "node:fs";
 import { join, basename, extname } from "node:path";
 import { homedir } from "node:os";
@@ -36,14 +37,7 @@ interface ModelFileInfo {
   requiredRAM_GB: number;
 }
 
-async function checkPort(port: number, host = "127.0.0.1"): Promise<boolean> {
-  return new Promise((resolve) => {
-    const socket = createConnection({ port, host, timeout: 2000 });
-    socket.on("connect", () => { socket.destroy(); resolve(true); });
-    socket.on("error", () => resolve(false));
-    socket.on("timeout", () => { socket.destroy(); resolve(false); });
-  });
-}
+// checkPort imported from services/net.ts
 
 /**
  * Get available RAM in MB from vm_stat + sysctl.
@@ -747,183 +741,42 @@ Args:
       },
     },
     async ({ prompt, system, runtime, temperature, max_tokens }) => {
-      const config = loadConfig();
+      // Delegate to the shared inference engine
+      const runtimeOpt = runtime === "auto" ? undefined : runtime as "ollama" | "mlx" | "lmstudio";
 
-      // Determine which endpoint to use
-      const portMap: Record<string, number> = {
-        ollama: config.aiStackPorts.ollama,
-        mlx: config.aiStackPorts.mlx,
-        lmstudio: config.aiStackPorts.lmstudio,
-      };
-
-      let targetRuntime = runtime;
-      let targetPort = 0;
-
-      if (runtime === "auto") {
-        // Probe in order: ollama, mlx, lmstudio
-        for (const rt of ["ollama", "mlx", "lmstudio"] as const) {
-          if (await checkPort(portMap[rt])) {
-            targetRuntime = rt;
-            targetPort = portMap[rt];
-            break;
-          }
-        }
-        if (targetPort === 0) {
-          return {
-            content: [{
-              type: "text",
-              text: JSON.stringify({
-                error: "NO_MODEL_RUNNING",
-                message: "No inference server detected on any port. Load a model first with optimac_model_serve.",
-                checked: portMap,
-              }, null, 2),
-            }],
-            isError: true,
-          };
-        }
-      } else {
-        targetPort = portMap[runtime];
-        if (!(await checkPort(targetPort))) {
-          return {
-            content: [{
-              type: "text",
-              text: JSON.stringify({
-                error: "RUNTIME_NOT_RUNNING",
-                runtime,
-                port: targetPort,
-                message: `${runtime} is not running on port ${targetPort}. Start it first with optimac_model_serve.`,
-              }, null, 2),
-            }],
-            isError: true,
-          };
-        }
-      }
-
-      // Build messages array
-      const messages: Array<{ role: string; content: string }> = [];
-      if (system) {
-        messages.push({ role: "system", content: system });
-      }
-      messages.push({ role: "user", content: prompt });
-
-      // Determine model name for the request
-      let modelName = "";
-      if (targetRuntime === "ollama") {
-        // Get the currently loaded model name from ollama ps
-        const psResult = await runCommand("ollama", ["ps"]);
-        if (psResult.exitCode === 0) {
-          const lines = psResult.stdout.split("\n").filter(Boolean).slice(1);
-          if (lines.length > 0) {
-            modelName = lines[0].trim().split(/\s+/)[0];
-          }
-        }
-
-        // If no model is loaded, try to find the most recently used one and reload it
-        if (!modelName) {
-          const listResult = await runCommand("ollama", ["list"]);
-          if (listResult.exitCode === 0) {
-            const listLines = listResult.stdout.split("\n").filter(Boolean).slice(1);
-            if (listLines.length > 0) {
-              // Pick the first (most recently modified) model
-              const firstModel = listLines[0].trim().split(/\s+/)[0];
-              if (firstModel) {
-                // Quick-load: send a minimal request to force Ollama to load the model
-                await runCommand(
-                  `echo "/bye" | ollama run "${firstModel}"`,
-                  [],
-                  { shell: true, timeout: LONG_TIMEOUT }
-                );
-                modelName = firstModel;
-              }
-            }
-          }
-          if (!modelName) {
-            return {
-              content: [{
-                type: "text",
-                text: JSON.stringify({
-                  error: "NO_MODEL_LOADED",
-                  runtime: "ollama",
-                  message: "Ollama is running but no model is loaded and none are installed. Use optimac_model_serve to load a model first.",
-                }, null, 2),
-              }],
-              isError: true,
-            };
-          }
-        }
-      }
-      // For MLX / LM Studio, model name is usually auto-detected by the server
-
-      const requestBody = JSON.stringify({
-        model: modelName || "default",
-        messages,
+      const result = await inferLocal(prompt, {
+        system,
+        maxTokens: max_tokens,
         temperature,
-        max_tokens,
-        stream: false,
+        runtime: runtimeOpt,
+        timeout: 120000,
       });
 
-      const curlResult = await runCommand(
-        "curl",
-        [
-          "-s",
-          "-X", "POST",
-          `http://127.0.0.1:${targetPort}/v1/chat/completions`,
-          "-H", "Content-Type: application/json",
-          "-d", requestBody,
-        ],
-        { timeout: 120000 } // 2 min timeout for inference
-      );
-
-      if (curlResult.exitCode !== 0) {
+      if (result.error) {
         return {
           content: [{
             type: "text",
             text: JSON.stringify({
-              error: "INFERENCE_FAILED",
-              runtime: targetRuntime,
-              port: targetPort,
-              stderr: curlResult.stderr,
+              error: result.error,
+              runtime: result.runtime || runtime,
+              model: result.model,
             }, null, 2),
           }],
           isError: true,
         };
       }
 
-      try {
-        const response = JSON.parse(curlResult.stdout);
-        const assistantMessage = response.choices?.[0]?.message?.content ?? "(no content)";
-        const usage = response.usage ?? {};
-
-        return {
-          content: [{
-            type: "text",
-            text: JSON.stringify({
-              runtime: targetRuntime,
-              model: response.model || modelName || "unknown",
-              port: targetPort,
-              response: assistantMessage,
-              usage: {
-                prompt_tokens: usage.prompt_tokens,
-                completion_tokens: usage.completion_tokens,
-                total_tokens: usage.total_tokens,
-              },
-            }, null, 2),
-          }],
-        };
-      } catch {
-        return {
-          content: [{
-            type: "text",
-            text: JSON.stringify({
-              error: "PARSE_ERROR",
-              runtime: targetRuntime,
-              rawResponse: curlResult.stdout.substring(0, 2000),
-              message: "Failed to parse model response as JSON.",
-            }, null, 2),
-          }],
-          isError: true,
-        };
-      }
+      return {
+        content: [{
+          type: "text",
+          text: JSON.stringify({
+            runtime: result.runtime,
+            model: result.model,
+            response: result.response,
+            usage: result.usage,
+          }, null, 2),
+        }],
+      };
     }
   );
 

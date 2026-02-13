@@ -1,23 +1,26 @@
 /**
- * Model Tasks: Cloud-to-Edge AI Bridge
+ * Model Tasks: Bidirectional AI Bridge
  *
- * These tools let Claude (cloud) delegate real work to local models (edge).
+ * These tools enable local ↔ cloud inference as equal peers.
  * Local models can read files, review code, generate content, edit files,
- * summarize codebases, and commit changes -- all orchestrated through MCP.
+ * summarize codebases, and commit changes — all orchestrated through MCP.
+ * When local models need stronger reasoning, they escalate to cloud APIs.
+ * When cloud models need privacy or heavy generation, they delegate to local.
  *
  * Architecture:
- *   Claude (cloud, reasoning/planning) --> MCP --> Local Model (edge, execution)
- *   Local model reads files, produces output, writes results to disk.
+ *   Local Model (edge, generation/execution) ←→ MCP ←→ Cloud Model (reasoning/knowledge)
+ *   Neither side owns the other. The MCP server bridges both directions.
  *
  * Privacy: sensitive work stays on-device. Heavy inference stays local.
- * Claude handles orchestration; local models handle generation.
+ * Cloud handles broader knowledge and stronger reasoning when needed.
  */
 
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z } from "zod";
 import { runCommand, LONG_TIMEOUT } from "../services/shell.js";
 import { loadConfig } from "../services/config.js";
-import { createConnection } from "node:net";
+import { inferLocal } from "../services/inference.js";
+import { stripCodeFences, assessResponseQuality } from "../services/text.js";
 import {
   readFileSync,
   writeFileSync,
@@ -26,129 +29,23 @@ import {
   existsSync,
 } from "node:fs";
 import { join, basename, extname, relative } from "node:path";
+import { homedir } from "node:os";
 
-// ---- CORE INFERENCE ENGINE ----
+// ---- SAFETY HELPERS ----
 
-async function checkPort(port: number, host = "127.0.0.1"): Promise<boolean> {
-  return new Promise((resolve) => {
-    const socket = createConnection({ port, host, timeout: 2000 });
-    socket.on("connect", () => { socket.destroy(); resolve(true); });
-    socket.on("error", () => resolve(false));
-    socket.on("timeout", () => { socket.destroy(); resolve(false); });
-  });
+/** Reject git refs containing shell metacharacters */
+function sanitizeGitRef(ref: string): string {
+  if (/[;&|`$(){}\[\]!\\<>\n\r]/.test(ref)) {
+    throw new Error(`Unsafe characters in git ref: ${ref}`);
+  }
+  return ref;
 }
 
-interface InferenceResult {
-  response: string;
-  model: string;
-  runtime: string;
-  usage: { prompt_tokens?: number; completion_tokens?: number; total_tokens?: number };
-  error?: string;
-}
-
-/**
- * Core inference function: send a prompt to whatever local model is running.
- * Auto-detects runtime, auto-reloads if model expired, handles all error cases.
- * This is the engine that powers all bridge tools.
- */
-async function inferLocal(
-  prompt: string,
-  options: {
-    system?: string;
-    maxTokens?: number;
-    temperature?: number;
-  } = {}
-): Promise<InferenceResult> {
-  const config = loadConfig();
-  const { system, maxTokens = 4096, temperature = 0.2 } = options;
-
-  const portMap: Record<string, number> = {
-    ollama: config.aiStackPorts.ollama,
-    mlx: config.aiStackPorts.mlx,
-    lmstudio: config.aiStackPorts.lmstudio,
-  };
-
-  // Find active runtime
-  let targetRuntime = "";
-  let targetPort = 0;
-  for (const rt of ["ollama", "mlx", "lmstudio"]) {
-    if (await checkPort(portMap[rt])) {
-      targetRuntime = rt;
-      targetPort = portMap[rt];
-      break;
-    }
-  }
-  if (!targetPort) {
-    return { response: "", model: "", runtime: "", usage: {}, error: "NO_RUNTIME: No inference server running. Use optimac_model_serve first." };
-  }
-
-  // Get model name (Ollama-specific: may need to reload)
-  let modelName = "";
-  if (targetRuntime === "ollama") {
-    const psResult = await runCommand("ollama", ["ps"]);
-    if (psResult.exitCode === 0) {
-      const lines = psResult.stdout.split("\n").filter(Boolean).slice(1);
-      if (lines.length > 0) {
-        modelName = lines[0].trim().split(/\s+/)[0];
-      }
-    }
-    // Auto-reload if model expired
-    if (!modelName) {
-      const listResult = await runCommand("ollama", ["list"]);
-      if (listResult.exitCode === 0) {
-        const listLines = listResult.stdout.split("\n").filter(Boolean).slice(1);
-        if (listLines.length > 0) {
-          const firstModel = listLines[0].trim().split(/\s+/)[0];
-          if (firstModel) {
-            await runCommand(
-              `echo "/bye" | ollama run "${firstModel}"`,
-              [],
-              { shell: true, timeout: LONG_TIMEOUT }
-            );
-            modelName = firstModel;
-          }
-        }
-      }
-      if (!modelName) {
-        return { response: "", model: "", runtime: "ollama", usage: {}, error: "NO_MODEL: Ollama running but no models installed." };
-      }
-    }
-  }
-
-  // Build request
-  const messages: Array<{ role: string; content: string }> = [];
-  if (system) messages.push({ role: "system", content: system });
-  messages.push({ role: "user", content: prompt });
-
-  const requestBody = JSON.stringify({
-    model: modelName || "default",
-    messages,
-    temperature,
-    max_tokens: maxTokens,
-    stream: false,
-  });
-
-  const curlResult = await runCommand(
-    "curl",
-    ["-s", "-X", "POST", `http://127.0.0.1:${targetPort}/v1/chat/completions`, "-H", "Content-Type: application/json", "-d", requestBody],
-    { timeout: 180000 } // 3 min for complex tasks
-  );
-
-  if (curlResult.exitCode !== 0) {
-    return { response: "", model: modelName, runtime: targetRuntime, usage: {}, error: `INFERENCE_FAILED: ${curlResult.stderr}` };
-  }
-
-  try {
-    const parsed = JSON.parse(curlResult.stdout);
-    return {
-      response: parsed.choices?.[0]?.message?.content ?? "",
-      model: parsed.model || modelName || "unknown",
-      runtime: targetRuntime,
-      usage: parsed.usage ?? {},
-    };
-  } catch {
-    return { response: "", model: modelName, runtime: targetRuntime, usage: {}, error: `PARSE_ERROR: ${curlResult.stdout.substring(0, 500)}` };
-  }
+/** Check if a path is within the user's home directory */
+function isPathSafe(targetPath: string): boolean {
+  const home = homedir();
+  const resolved = join(targetPath); // resolve relative paths
+  return resolved.startsWith(home);
 }
 
 // ---- FILE HELPERS ----
@@ -311,11 +208,15 @@ Examples:
       // Write output if requested
       let writeStatus = "";
       if (output_path && result.response) {
-        try {
-          writeFileSync(output_path, result.response, "utf-8");
-          writeStatus = `Written to ${output_path}`;
-        } catch (e) {
-          writeStatus = `WRITE FAILED: ${e instanceof Error ? e.message : String(e)}`;
+        if (!isPathSafe(output_path)) {
+          writeStatus = `WRITE BLOCKED: path '${output_path}' is outside the user's home directory`;
+        } else {
+          try {
+            writeFileSync(output_path, result.response, "utf-8");
+            writeStatus = `Written to ${output_path}`;
+          } catch (e) {
+            writeStatus = `WRITE FAILED: ${e instanceof Error ? e.message : String(e)}`;
+          }
         }
       }
 
@@ -325,7 +226,7 @@ Examples:
           text: JSON.stringify({
             model: result.model,
             runtime: result.runtime,
-            filesRead: resolvedFiles.map((f) => f.path),
+            filesRead: resolvedFiles.map((f: { path: string }) => f.path),
             response: result.response,
             outputWritten: writeStatus || undefined,
             usage: result.usage,
@@ -360,28 +261,41 @@ Args:
       annotations: { readOnlyHint: true, destructiveHint: false, idempotentHint: true, openWorldHint: true },
     },
     async ({ target, repo_path, context_files, focus }) => {
-      // Get the diff
-      let diffCmd: string;
+      // Get the diff using safe argument arrays with cwd
+      let diffOutput: string;
       let diffLabel: string;
-      if (target === "uncommitted") {
-        diffCmd = `cd "${repo_path}" && git diff && git diff --cached`;
-        diffLabel = "Uncommitted changes (staged + unstaged)";
-      } else if (target.startsWith("branch:")) {
-        const range = target.replace("branch:", "");
-        diffCmd = `cd "${repo_path}" && git diff ${range}`;
-        diffLabel = `Branch diff: ${range}`;
-      } else {
-        diffCmd = `cd "${repo_path}" && git show ${target}`;
-        diffLabel = `Commit: ${target}`;
-      }
 
-      const diffResult = await runCommand(diffCmd, [], { shell: true, timeout: 15000 });
-      if (diffResult.exitCode !== 0 && !diffResult.stdout) {
-        return { content: [{ type: "text", text: JSON.stringify({ error: `Git command failed: ${diffResult.stderr}` }) }], isError: true };
+      if (target === "uncommitted") {
+        const unstaged = await runCommand("git", ["diff"], { cwd: repo_path, timeout: 15000 });
+        const staged = await runCommand("git", ["diff", "--cached"], { cwd: repo_path, timeout: 15000 });
+        diffOutput = [unstaged.stdout, staged.stdout].filter(Boolean).join("\n");
+        diffLabel = "Uncommitted changes (staged + unstaged)";
+
+        if (!diffOutput && unstaged.exitCode !== 0) {
+          return { content: [{ type: "text", text: JSON.stringify({ error: `Git command failed: ${unstaged.stderr}` }) }], isError: true };
+        }
+      } else if (target.startsWith("branch:")) {
+        const range = sanitizeGitRef(target.replace("branch:", ""));
+        const result = await runCommand("git", ["diff", range], { cwd: repo_path, timeout: 15000 });
+        diffOutput = result.stdout;
+        diffLabel = `Branch diff: ${range}`;
+
+        if (result.exitCode !== 0 && !diffOutput) {
+          return { content: [{ type: "text", text: JSON.stringify({ error: `Git command failed: ${result.stderr}` }) }], isError: true };
+        }
+      } else {
+        const safeTarget = sanitizeGitRef(target);
+        const result = await runCommand("git", ["show", safeTarget], { cwd: repo_path, timeout: 15000 });
+        diffOutput = result.stdout;
+        diffLabel = `Commit: ${safeTarget}`;
+
+        if (result.exitCode !== 0 && !diffOutput) {
+          return { content: [{ type: "text", text: JSON.stringify({ error: `Git command failed: ${result.stderr}` }) }], isError: true };
+        }
       }
 
       // Get recent log for context
-      const logResult = await runCommand(`cd "${repo_path}" && git log --oneline -5`, [], { shell: true, timeout: 5000 });
+      const logResult = await runCommand("git", ["log", "--oneline", "-5"], { cwd: repo_path, timeout: 5000 });
 
       // Read additional context files
       const contextData = context_files.length > 0 ? resolveFiles(context_files) : [];
@@ -394,7 +308,7 @@ Args:
       const prompt = `Review the following code changes and provide a structured assessment.
 
 DIFF (${diffLabel}):
-${diffResult.stdout}
+${diffOutput}
 
 RECENT COMMITS:
 ${logResult.stdout}${contextSection}${focusInstruction}
@@ -422,7 +336,7 @@ VERDICT: APPROVE / REQUEST_CHANGES / NEEDS_DISCUSSION`;
             runtime: result.runtime,
             target: diffLabel,
             review: result.response,
-            diffLines: diffResult.stdout.split("\n").length,
+            diffLines: diffOutput.split("\n").length,
             usage: result.usage,
           }, null, 2),
         }],
@@ -482,8 +396,11 @@ Output ONLY the raw file contents. No markdown code fences. No explanations. No 
 
       // Clean response: strip leading/trailing code fences if model added them despite instructions
       let cleaned = result.response;
-      const fenceMatch = cleaned.match(/^```\w*\n([\s\S]*?)\n```\s*$/);
-      if (fenceMatch) cleaned = fenceMatch[1];
+      cleaned = stripCodeFences(cleaned);
+
+      if (!isPathSafe(output_path)) {
+        return { content: [{ type: "text", text: JSON.stringify({ error: `Write blocked: path '${output_path}' is outside the user's home directory` }) }], isError: true };
+      }
 
       try {
         writeFileSync(output_path, cleaned, "utf-8");
@@ -567,14 +484,17 @@ Output the COMPLETE modified file. Include ALL content, not just the changed par
 
       // Clean response
       let cleaned = result.response;
-      const fenceMatch = cleaned.match(/^```\w*\n([\s\S]*?)\n```\s*$/);
-      if (fenceMatch) cleaned = fenceMatch[1];
+      cleaned = stripCodeFences(cleaned);
 
       // Backup
       if (create_backup) {
         try {
           writeFileSync(`${file_path}.bak`, originalContent, "utf-8");
         } catch { /* backup failed, continue anyway */ }
+      }
+
+      if (!isPathSafe(file_path)) {
+        return { content: [{ type: "text", text: JSON.stringify({ error: `Write blocked: path '${file_path}' is outside the user's home directory` }) }], isError: true };
       }
 
       // Write
@@ -640,7 +560,7 @@ Args:
       const focusInstruction = focus ? `\nFOCUS: Emphasize ${focus} aspects.` : "";
       const formatInstruction = format === "brief" ? "Keep it under 200 words."
         : format === "bullet-points" ? "Use a structured bullet-point format."
-        : "Provide a thorough, detailed analysis.";
+          : "Provide a thorough, detailed analysis.";
 
       const prompt = `Summarize the following ${resolvedFiles.length} file(s):
 
@@ -703,20 +623,21 @@ Args:
       annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: false, openWorldHint: true },
     },
     async ({ repo_path, auto_commit, files_to_stage, style }) => {
-      // Get status and diff
-      const statusResult = await runCommand(`cd "${repo_path}" && git status`, [], { shell: true, timeout: 10000 });
-      const diffResult = await runCommand(`cd "${repo_path}" && git diff && git diff --cached`, [], { shell: true, timeout: 15000 });
-      const logResult = await runCommand(`cd "${repo_path}" && git log --oneline -10`, [], { shell: true, timeout: 5000 });
+      // Get status and diff using safe cwd option
+      const statusResult = await runCommand("git", ["status"], { cwd: repo_path, timeout: 10000 });
+      const unstaged = await runCommand("git", ["diff"], { cwd: repo_path, timeout: 15000 });
+      const staged = await runCommand("git", ["diff", "--cached"], { cwd: repo_path, timeout: 15000 });
+      const diffOutput = [unstaged.stdout, staged.stdout].filter(Boolean).join("\n");
+      const logResult = await runCommand("git", ["log", "--oneline", "-10"], { cwd: repo_path, timeout: 5000 });
 
-      if (!diffResult.stdout.trim() && !statusResult.stdout.includes("Untracked")) {
+      if (!diffOutput.trim() && !statusResult.stdout.includes("Untracked")) {
         return { content: [{ type: "text", text: JSON.stringify({ message: "No uncommitted changes found.", status: statusResult.stdout }) }] };
       }
 
       // Get untracked file contents too
       const untrackedResult = await runCommand(
-        `cd "${repo_path}" && git ls-files --others --exclude-standard`,
-        [],
-        { shell: true, timeout: 5000 }
+        "git", ["ls-files", "--others", "--exclude-standard"],
+        { cwd: repo_path, timeout: 5000 }
       );
       let untrackedContext = "";
       if (untrackedResult.stdout.trim()) {
@@ -732,8 +653,8 @@ Args:
       const styleGuide = style === "conventional"
         ? "Use conventional commits format: type(scope): description. Types: feat, fix, docs, refactor, test, chore."
         : style === "short"
-        ? "Keep it to one line, under 72 characters."
-        : "Write a descriptive multi-line message with a summary line and body.";
+          ? "Keep it to one line, under 72 characters."
+          : "Write a descriptive multi-line message with a summary line and body.";
 
       const prompt = `Generate a git commit message for the following changes.
 
@@ -741,7 +662,7 @@ GIT STATUS:
 ${statusResult.stdout}
 
 GIT DIFF:
-${diffResult.stdout.substring(0, 6000)}${untrackedContext}
+${diffOutput.substring(0, 6000)}${untrackedContext}
 
 RECENT COMMITS (match this style):
 ${logResult.stdout}
@@ -783,22 +704,20 @@ Output ONLY the commit message text. No explanations. No code fences. If multi-l
         };
       }
 
-      // Auto-commit: stage and commit
-      const stageCmd = files_to_stage.length > 0
-        ? `cd "${repo_path}" && git add ${files_to_stage.map((f) => `"${f}"`).join(" ")}`
-        : `cd "${repo_path}" && git add -A`;
+      // Auto-commit: stage and commit using safe argument arrays
+      const stageArgs = files_to_stage.length > 0
+        ? ["add", ...files_to_stage]
+        : ["add", "-A"];
 
-      const stageResult = await runCommand(stageCmd, [], { shell: true, timeout: 10000 });
+      const stageResult = await runCommand("git", stageArgs, { cwd: repo_path, timeout: 10000 });
       if (stageResult.exitCode !== 0) {
         return { content: [{ type: "text", text: JSON.stringify({ error: `Stage failed: ${stageResult.stderr}`, suggestedMessage: commitMsg }) }], isError: true };
       }
 
-      // Escape the commit message for shell
-      const escapedMsg = commitMsg.replace(/'/g, "'\\''");
+      // Commit using -m flag as a separate argument (no shell escaping needed)
       const commitResult = await runCommand(
-        `cd "${repo_path}" && git commit -m '${escapedMsg}'`,
-        [],
-        { shell: true, timeout: 15000 }
+        "git", ["commit", "-m", commitMsg],
+        { cwd: repo_path, timeout: 15000 }
       );
 
       return {
@@ -1037,7 +956,8 @@ Args:
           maxTokens: 4096,
         });
 
-        if (!localResult.error && localResult.response.trim().length > 10) {
+        const quality = assessResponseQuality(localResult.response);
+        if (!localResult.error && quality.ok) {
           response = localResult.response;
           modelUsed = localResult.model;
           usage = localResult.usage;
@@ -1134,14 +1054,17 @@ Args:
       // Write output if requested
       let writeStatus = "";
       if (output_path && response) {
-        let cleaned = response;
-        const fenceMatch = cleaned.match(/^```\w*\n([\s\S]*?)\n```\s*$/);
-        if (fenceMatch) cleaned = fenceMatch[1];
-        try {
-          writeFileSync(output_path, cleaned, "utf-8");
-          writeStatus = `Written to ${output_path}`;
-        } catch (e) {
-          writeStatus = `WRITE FAILED: ${e instanceof Error ? e.message : String(e)}`;
+        if (!isPathSafe(output_path)) {
+          writeStatus = `WRITE BLOCKED: path '${output_path}' is outside the user's home directory`;
+        } else {
+          let cleaned = response;
+          cleaned = stripCodeFences(cleaned);
+          try {
+            writeFileSync(output_path, cleaned, "utf-8");
+            writeStatus = `Written to ${output_path}`;
+          } catch (e) {
+            writeStatus = `WRITE FAILED: ${e instanceof Error ? e.message : String(e)}`;
+          }
         }
       }
 
