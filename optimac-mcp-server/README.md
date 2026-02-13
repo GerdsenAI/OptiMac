@@ -32,7 +32,7 @@ Edit `~/Library/Application Support/Claude/claude_desktop_config.json`:
 claude mcp add optimac node /path/to/optimac-mcp-server/dist/index.js
 ```
 
-## Tools (39 total)
+## Tools (40 total)
 
 For detailed documentation of every tool with parameters, return values, and examples, see [MCP_COMMANDS.md](../MCP_COMMANDS.md).
 
@@ -74,7 +74,7 @@ For detailed documentation of every tool with parameters, return values, and exa
 | `optimac_mlx_stop` | Stop MLX-LM server |
 | `optimac_swap_model` | Smart model swap (stop, purge, restart) |
 
-### Model Management (7) -- NEW
+### Model Management (8) -- NEW
 | Tool | Description |
 |------|------------|
 | `optimac_models_available` | Browse local models filtered by RAM fit |
@@ -85,6 +85,7 @@ For detailed documentation of every tool with parameters, return values, and exa
 | `optimac_model_dir_set` | Set model base directory |
 | `optimac_model_dir_get` | Get model base directory |
 | `optimac_model_ram_check` | Check if a model fits in available RAM |
+| `optimac_model_chat` | Send a prompt to the loaded model and get a response |
 
 ### Memory Pressure (2)
 | Tool | Description |

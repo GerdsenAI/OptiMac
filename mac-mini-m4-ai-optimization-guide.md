@@ -1,6 +1,6 @@
 # Mac Mini M4 / M4 Pro: Complete AI Inference Optimization Guide
 
-## The Goal
+## The Goals
 
 Turn a Mac Mini M4 or M4 Pro into a dedicated, always-on, bloat-free AI inference machine running MLX workloads, local LLMs (via LM Studio, Ollama), AI agents (OpenClaw, Claude Code), and cloud-routed models (OpenRouter) -- all controllable via MCP servers that act as a system-level "IQ 3000 admin" managing power, memory, network, and processes 24/7/365.
 

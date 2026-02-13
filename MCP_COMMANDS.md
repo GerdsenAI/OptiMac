@@ -1,6 +1,6 @@
 # OptiMac MCP Server - Command Reference
 
-Version 1.1.0 | 39 tools across 6 domains
+Version 1.2.0 | 40 tools across 6 domains
 
 All tools are accessible via Claude Desktop or Claude Code when the OptiMac MCP server is configured. Each tool returns structured JSON responses.
 
@@ -9,7 +9,7 @@ All tools are accessible via Claude Desktop or Claude Code when the OptiMac MCP 
 1. System Monitoring (6 tools)
 2. System Control (13 tools)
 3. AI Stack Management (7 tools)
-4. Model Management (7 tools)
+4. Model Management (8 tools)
 5. Memory Pressure (2 tools)
 6. Configuration (6 tools)
 
@@ -456,6 +456,34 @@ Check if a specific model can be loaded without causing swap thrashing. Takes mo
 - suggestions (if doesn't fit)
 
 **Example use:** "Can I load a 7GB model right now?"
+
+---
+
+### optimac_model_chat
+
+Send a prompt to a currently loaded model and get a response. Uses the OpenAI-compatible /v1/chat/completions endpoint exposed by Ollama, MLX, or LM Studio.
+
+Automatically detects which runtime has a model loaded. If multiple are running, specify the runtime parameter.
+
+**Parameters:**
+- `prompt` (string): The message to send to the model
+- `system` (string, optional): System prompt for context
+- `runtime` (string, optional): "auto" (default), "ollama", "mlx", or "lmstudio"
+- `temperature` (number, optional): Sampling temperature (default 0.3)
+- `max_tokens` (number, optional): Max tokens to generate (default 1024)
+
+**Returns:**
+- runtime, model, port
+- response: The model's text response
+- usage: prompt_tokens, completion_tokens, total_tokens
+
+**Errors:**
+- NO_MODEL_RUNNING: No inference server detected
+- RUNTIME_NOT_RUNNING: Specified runtime not active
+- INFERENCE_FAILED: Model failed to respond
+- PARSE_ERROR: Invalid JSON from model API
+
+**Example use:** "Ask the loaded model to review this code diff." / "Have qwen3 summarize this document."
 
 ---
 

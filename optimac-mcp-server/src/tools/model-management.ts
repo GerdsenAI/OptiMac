@@ -715,6 +715,184 @@ Args:
     }
   );
 
+  // ---- CHAT / INFERENCE WITH LOADED MODEL ----
+  server.registerTool(
+    "optimac_model_chat",
+    {
+      title: "Chat with Loaded Model",
+      description: `Send a prompt to a currently loaded model and get a response.
+Uses the OpenAI-compatible /v1/chat/completions endpoint exposed by Ollama, MLX, or LM Studio.
+
+Automatically detects which runtime has a model loaded. If multiple are running,
+specify the runtime parameter.
+
+Args:
+  - prompt: The user message to send
+  - system: Optional system prompt
+  - runtime: "auto" (detect first available), "ollama", "mlx", or "lmstudio"
+  - temperature: Sampling temperature (default 0.3)
+  - max_tokens: Maximum tokens to generate (default 1024)`,
+      inputSchema: {
+        prompt: z.string().min(1).describe("The message to send to the model"),
+        system: z.string().optional().describe("Optional system prompt"),
+        runtime: z.enum(["auto", "ollama", "mlx", "lmstudio"]).default("auto").describe("Which runtime to use (auto-detect by default)"),
+        temperature: z.number().min(0).max(2).default(0.3).describe("Sampling temperature"),
+        max_tokens: z.number().positive().default(1024).describe("Max tokens to generate"),
+      },
+      annotations: {
+        readOnlyHint: true,
+        destructiveHint: false,
+        idempotentHint: false,
+        openWorldHint: true,
+      },
+    },
+    async ({ prompt, system, runtime, temperature, max_tokens }) => {
+      const config = loadConfig();
+
+      // Determine which endpoint to use
+      const portMap: Record<string, number> = {
+        ollama: config.aiStackPorts.ollama,
+        mlx: config.aiStackPorts.mlx,
+        lmstudio: config.aiStackPorts.lmstudio,
+      };
+
+      let targetRuntime = runtime;
+      let targetPort = 0;
+
+      if (runtime === "auto") {
+        // Probe in order: ollama, mlx, lmstudio
+        for (const rt of ["ollama", "mlx", "lmstudio"] as const) {
+          if (await checkPort(portMap[rt])) {
+            targetRuntime = rt;
+            targetPort = portMap[rt];
+            break;
+          }
+        }
+        if (targetPort === 0) {
+          return {
+            content: [{
+              type: "text",
+              text: JSON.stringify({
+                error: "NO_MODEL_RUNNING",
+                message: "No inference server detected on any port. Load a model first with optimac_model_serve.",
+                checked: portMap,
+              }, null, 2),
+            }],
+            isError: true,
+          };
+        }
+      } else {
+        targetPort = portMap[runtime];
+        if (!(await checkPort(targetPort))) {
+          return {
+            content: [{
+              type: "text",
+              text: JSON.stringify({
+                error: "RUNTIME_NOT_RUNNING",
+                runtime,
+                port: targetPort,
+                message: `${runtime} is not running on port ${targetPort}. Start it first with optimac_model_serve.`,
+              }, null, 2),
+            }],
+            isError: true,
+          };
+        }
+      }
+
+      // Build messages array
+      const messages: Array<{ role: string; content: string }> = [];
+      if (system) {
+        messages.push({ role: "system", content: system });
+      }
+      messages.push({ role: "user", content: prompt });
+
+      // Determine model name for the request
+      let modelName = "";
+      if (targetRuntime === "ollama") {
+        // Get the currently loaded model name from ollama ps
+        const psResult = await runCommand("ollama", ["ps"]);
+        if (psResult.exitCode === 0) {
+          const lines = psResult.stdout.split("\n").filter(Boolean).slice(1);
+          if (lines.length > 0) {
+            modelName = lines[0].trim().split(/\s+/)[0];
+          }
+        }
+      }
+      // For MLX / LM Studio, model name is usually auto-detected by the server
+
+      const requestBody = JSON.stringify({
+        model: modelName || "default",
+        messages,
+        temperature,
+        max_tokens,
+        stream: false,
+      });
+
+      const curlResult = await runCommand(
+        "curl",
+        [
+          "-s",
+          "-X", "POST",
+          `http://127.0.0.1:${targetPort}/v1/chat/completions`,
+          "-H", "Content-Type: application/json",
+          "-d", requestBody,
+        ],
+        { timeout: 120000 } // 2 min timeout for inference
+      );
+
+      if (curlResult.exitCode !== 0) {
+        return {
+          content: [{
+            type: "text",
+            text: JSON.stringify({
+              error: "INFERENCE_FAILED",
+              runtime: targetRuntime,
+              port: targetPort,
+              stderr: curlResult.stderr,
+            }, null, 2),
+          }],
+          isError: true,
+        };
+      }
+
+      try {
+        const response = JSON.parse(curlResult.stdout);
+        const assistantMessage = response.choices?.[0]?.message?.content ?? "(no content)";
+        const usage = response.usage ?? {};
+
+        return {
+          content: [{
+            type: "text",
+            text: JSON.stringify({
+              runtime: targetRuntime,
+              model: response.model || modelName || "unknown",
+              port: targetPort,
+              response: assistantMessage,
+              usage: {
+                prompt_tokens: usage.prompt_tokens,
+                completion_tokens: usage.completion_tokens,
+                total_tokens: usage.total_tokens,
+              },
+            }, null, 2),
+          }],
+        };
+      } catch {
+        return {
+          content: [{
+            type: "text",
+            text: JSON.stringify({
+              error: "PARSE_ERROR",
+              runtime: targetRuntime,
+              rawResponse: curlResult.stdout.substring(0, 2000),
+              message: "Failed to parse model response as JSON.",
+            }, null, 2),
+          }],
+          isError: true,
+        };
+      }
+    }
+  );
+
   // ---- RAM CHECK FOR A SPECIFIC MODEL ----
   server.registerTool(
     "optimac_model_ram_check",
