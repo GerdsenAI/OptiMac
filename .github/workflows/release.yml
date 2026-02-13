@@ -44,7 +44,7 @@ jobs:
       - name: Install Python dependencies
         run: |
           pip install --upgrade pip
-          pip install psutil rumps Pillow py2app
+          pip install psutil rumps Pillow pyinstaller pyobjc-core pyobjc-framework-Cocoa
           pip install -e .
 
       - name: Install create-dmg
