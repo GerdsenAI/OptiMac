@@ -4,17 +4,18 @@
  *
  * A comprehensive MCP server for Mac Mini M4 / M4 Pro AI inference optimization.
  * Controls system resources, manages AI inference stacks, handles memory pressure,
- * and bridges local ↔ cloud inference as equal peers — accessible via any MCP client.
+ * and bridges local ↔ edge ↔ cloud inference as equal peers — accessible via any MCP client.
  *
  * Transport: stdio (launched as subprocess by MCP client)
  * Config: ~/.optimac/config.json
  *
- * 55 tools across 8 domains:
+ * 60 tools across 9 domains:
  *   - System Monitoring (6): memory, processes, disk, thermal, power, overview
  *   - System Control (13): purge, DNS, routes, power, power-optimize, spotlight, caches, set-dns, services, enable-service, network-reset, reduce-ui, kill-process
  *   - AI Stack (7): status, ollama start/stop/models, mlx start/stop, smart swap
  *   - Model Management (9): browse local models, ollama available, serve/load, unload, running models, model dir get/set, RAM check, chat/inference
- *   - Model Tasks (8): bidirectional AI bridge — task delegation, code review, file generation, file editing, summarization, git commit, cloud escalation, smart routing
+ *   - Model Tasks (9): bidirectional AI bridge -- task delegation, code review, file generation, file editing, summarization, git commit, cloud escalation, edge escalation, smart 3-tier routing
+ *   - Edge-to-Edge (4): add/remove/list/test edge endpoints for LAN inference
  *   - Memory Pressure (2): pressure check with tiered response, full maintenance cycle
  *   - Configuration (6): get/set config, protect/unprotect processes, ports, debloat presets
  *   - Autonomy (4): watchdog start/stop/status, audit log reading
@@ -30,9 +31,10 @@ import { registerConfigTools } from "./tools/config-tools.js";
 import { registerModelManagementTools } from "./tools/model-management.js";
 import { registerModelTaskTools } from "./tools/model-tasks.js";
 import { registerAutonomyTools } from "./tools/autonomy-tools.js";
+import { registerEdgeTools } from "./tools/edge-tools.js";
 import { loadConfig } from "./services/config.js";
 
-const VERSION = "2.0.0";
+const VERSION = "2.5.0";
 
 async function main(): Promise<void> {
   // Initialize config on first run
@@ -60,9 +62,12 @@ async function main(): Promise<void> {
   registerConfigTools(server);
   registerModelManagementTools(server);
   registerModelTaskTools(server);
+  registerEdgeTools(server);
   registerAutonomyTools(server);
 
-  console.error("All tools registered (55 tools across 8 domains). Starting stdio transport...");
+  const edgeCount = Object.keys(config.edgeEndpoints).length;
+  console.error(`Edge endpoints configured: ${edgeCount}`);
+  console.error("All tools registered (60 tools across 9 domains). Starting stdio transport...");
 
   // Connect via stdio
   const transport = new StdioServerTransport();

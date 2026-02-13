@@ -7,11 +7,12 @@
  * When local models need stronger reasoning, they escalate to cloud APIs.
  * When cloud models need privacy or heavy generation, they delegate to local.
  *
- * Architecture:
- *   Local Model (edge, generation/execution) ←→ MCP ←→ Cloud Model (reasoning/knowledge)
- *   Neither side owns the other. The MCP server bridges both directions.
+ * Architecture (3-tier):
+ *   Local Model (on-device) ←→ Edge Models (LAN/network) ←→ Cloud Model (API)
+ *   MCP bridges all three tiers. Neither side owns the other.
  *
- * Privacy: sensitive work stays on-device. Heavy inference stays local.
+ * Privacy: sensitive work stays on-device. Heavy inference stays local or edge.
+ * Edge handles cross-runtime delegation (Ollama↔MLX, local↔vLLM, etc.).
  * Cloud handles broader knowledge and stronger reasoning when needed.
  */
 
@@ -20,6 +21,7 @@ import { z } from "zod";
 import { runCommand, LONG_TIMEOUT } from "../services/shell.js";
 import { loadConfig } from "../services/config.js";
 import { inferLocal } from "../services/inference.js";
+import { inferEdge } from "../services/inference-edge.js";
 import { stripCodeFences, assessResponseQuality } from "../services/text.js";
 import {
   readFileSync,
@@ -901,41 +903,150 @@ Args:
   );
 
   // ========================================
-  // TOOL 8: optimac_model_route
-  // Smart routing: decide edge vs cloud based on task complexity.
+  // TOOL 8: optimac_edge_escalate
+  // Edge-to-Edge: delegate work to another inference server on the network.
+  // ========================================
+  server.registerTool(
+    "optimac_edge_escalate",
+    {
+      title: "Escalate to Edge Endpoint",
+      description: `Edge-to-Edge bridge: send a task to another inference server on the local network
+or same machine. Targets a specific configured edge endpoint by name.
+
+Use this when:
+  - You want to use a specific model on a different machine (NVIDIA GPU, Mac Studio, etc.)
+  - The local runtime doesn't have the right model loaded
+  - You want to compare outputs across runtimes (Ollama vs MLX vs vLLM)
+  - You need a larger model available on a more powerful edge device
+
+Configure endpoints first with optimac_edge_add.
+
+Args:
+  - prompt: The task/prompt to send
+  - edge_endpoint: Name of the configured edge endpoint
+  - system: Optional system prompt
+  - files: File paths to include as context
+  - max_tokens: Max tokens for response`,
+      inputSchema: {
+        prompt: z.string().min(1).describe("Task to send to edge endpoint"),
+        edge_endpoint: z.string().min(1).describe("Name of configured edge endpoint"),
+        system: z.string().optional().describe("System prompt"),
+        files: z.array(z.string()).default([]).describe("File paths to include as context"),
+        max_tokens: z.number().positive().default(4096).describe("Max tokens for response"),
+      },
+      annotations: { readOnlyHint: true, destructiveHint: false, idempotentHint: false, openWorldHint: true },
+    },
+    async ({ prompt, edge_endpoint, system, files, max_tokens }) => {
+      const config = loadConfig();
+      const endpoint = config.edgeEndpoints[edge_endpoint];
+
+      if (!endpoint) {
+        return {
+          content: [{
+            type: "text",
+            text: JSON.stringify({
+              error: "ENDPOINT_NOT_FOUND",
+              edge_endpoint,
+              available: Object.keys(config.edgeEndpoints),
+              message: `Edge endpoint "${edge_endpoint}" not configured. Use optimac_edge_add first.`,
+            }, null, 2),
+          }],
+          isError: true,
+        };
+      }
+
+      // Build context from files
+      const resolvedFiles = files.length > 0 ? resolveFiles(files) : [];
+      const fileContext = resolvedFiles.length > 0
+        ? `\n\nFILES:\n${buildFileContext(resolvedFiles)}`
+        : "";
+
+      const fullPrompt = `${prompt}${fileContext}`;
+
+      const start = Date.now();
+      const result = await inferEdge(fullPrompt, endpoint, edge_endpoint, {
+        system,
+        maxTokens: max_tokens,
+        temperature: 0.2,
+        timeout: 120000,
+      });
+      const latencyMs = Date.now() - start;
+
+      if (result.error) {
+        return {
+          content: [{
+            type: "text",
+            text: JSON.stringify({
+              error: result.error,
+              edge_endpoint,
+              url: endpoint.url,
+              runtimeType: endpoint.runtimeType,
+              latencyMs,
+            }, null, 2),
+          }],
+          isError: true,
+        };
+      }
+
+      return {
+        content: [{
+          type: "text",
+          text: JSON.stringify({
+            response: result.response,
+            model: result.model,
+            runtime: result.runtime,
+            edge_endpoint,
+            url: endpoint.url,
+            runtimeType: endpoint.runtimeType,
+            latencyMs,
+            filesRead: resolvedFiles.map((f) => f.path),
+            usage: result.usage,
+          }, null, 2),
+        }],
+      };
+    }
+  );
+
+  // ========================================
+  // TOOL 9: optimac_model_route
+  // Smart 3-tier routing: local -> edge -> cloud.
   // ========================================
   server.registerTool(
     "optimac_model_route",
     {
-      title: "Smart Route: Edge or Cloud",
-      description: `Intelligent routing that decides whether to use a local model (edge) or cloud AI
-based on the task characteristics. Tries local first; if the response quality is
-insufficient or the task exceeds local capabilities, auto-escalates to cloud.
+      title: "Smart Route: Local, Edge, or Cloud",
+      description: `Three-tier intelligent routing: Local -> Edge -> Cloud.
+
+Tries local first, then edge endpoints on the network, then cloud APIs.
+Automatically escalates based on response quality and availability.
 
 Strategy:
   - Simple tasks (summarize, format, translate): local model (fast, free, private)
-  - Complex tasks (multi-step reasoning, large context): cloud model
-  - If local model returns empty/low-quality: auto-retry on cloud
-  - Respects privacy: files marked sensitive always stay local
+  - Cross-runtime tasks or local failure: edge endpoints (LAN devices, other runtimes)
+  - Complex reasoning or edge failure: cloud model (OpenRouter, Anthropic, OpenAI)
+  - If local model returns empty/low-quality: auto-retry on edge, then cloud
+  - Respects privacy: files marked sensitive never leave local + edge tier
 
 Args:
   - task: The task to perform
   - files: File paths for context
-  - prefer: "local" (default), "cloud", or "auto"
-  - sensitive: If true, NEVER escalate to cloud (privacy mode)
+  - prefer: "local" (default), "edge", "cloud", or "auto" (tries all tiers)
+  - sensitive: If true, NEVER escalate to cloud (privacy mode, local + edge only)
   - output_path: Optional file to write output to
-  - cloud_provider: Which cloud to use if escalating (default: openrouter)`,
+  - cloud_provider: Which cloud to use if escalating (default: openrouter)
+  - edge_endpoint: Specific edge endpoint name to try (skips others)`,
       inputSchema: {
         task: z.string().min(1).describe("The task to perform"),
         files: z.array(z.string()).default([]).describe("File paths for context"),
-        prefer: z.enum(["local", "cloud", "auto"]).default("auto").describe("Preferred execution target"),
+        prefer: z.enum(["local", "edge", "cloud", "auto"]).default("auto").describe("Preferred execution target"),
         sensitive: z.boolean().default(false).describe("If true, never send to cloud"),
         output_path: z.string().optional().describe("Write output to this file"),
         cloud_provider: z.enum(["openrouter", "anthropic", "openai"]).default("openrouter").describe("Cloud provider for escalation"),
+        edge_endpoint: z.string().optional().describe("Specific edge endpoint name to target"),
       },
       annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: false, openWorldHint: true },
     },
-    async ({ task, files, prefer, sensitive, output_path, cloud_provider }) => {
+    async ({ task, files, prefer, sensitive, output_path, cloud_provider, edge_endpoint }) => {
       const resolvedFiles = files.length > 0 ? resolveFiles(files) : [];
       const fileContext = resolvedFiles.length > 0
         ? `\n\nFILES:\n${buildFileContext(resolvedFiles)}`
@@ -950,8 +1061,8 @@ Args:
       let usage: Record<string, unknown> = {};
       let escalated = false;
 
-      // Try local first (unless prefer=cloud)
-      if (prefer !== "cloud") {
+      // TIER 1: Try local first (unless prefer=cloud or prefer=edge)
+      if (prefer !== "cloud" && prefer !== "edge") {
         const localResult = await inferLocal(fullPrompt, {
           system: systemPrompt,
           maxTokens: 4096,
@@ -963,21 +1074,59 @@ Args:
           modelUsed = localResult.model;
           usage = localResult.usage;
           executedOn = `local (${localResult.runtime})`;
-        } else if (sensitive) {
-          // Can't escalate -- return whatever we got
-          response = localResult.response || localResult.error || "Local model failed and sensitive mode prevents cloud escalation.";
-          modelUsed = localResult.model || "none";
-          executedOn = "local (failed, sensitive mode)";
         } else if (prefer === "local") {
-          // Tried local, it failed, but user prefers local
+          // Tried local, it failed, but user prefers local only
           response = localResult.response || localResult.error || "Local model failed.";
           modelUsed = localResult.model || "none";
           executedOn = "local (failed)";
         }
-        // else: fall through to cloud
+        // else: fall through to edge tier
       }
 
-      // Escalate to cloud if needed
+      // TIER 2: Try edge endpoints (if local failed or prefer=edge/auto)
+      if (!response && prefer !== "cloud") {
+        const config = loadConfig();
+        const edgeNames = Object.keys(config.edgeEndpoints);
+
+        if (edgeNames.length > 0) {
+          // If specific endpoint requested, try only that one
+          const targets = edge_endpoint
+            ? edgeNames.filter((n) => n === edge_endpoint)
+            : edgeNames.sort((a, b) => (config.edgeEndpoints[a].priority ?? 50) - (config.edgeEndpoints[b].priority ?? 50));
+
+          for (const epName of targets) {
+            const ep = config.edgeEndpoints[epName];
+            const edgeResult = await inferEdge(fullPrompt, ep, epName, {
+              system: systemPrompt,
+              maxTokens: 4096,
+              timeout: 60000,
+            });
+
+            const quality = assessResponseQuality(edgeResult.response);
+            if (!edgeResult.error && quality.ok) {
+              response = edgeResult.response;
+              modelUsed = edgeResult.model;
+              usage = edgeResult.usage;
+              executedOn = `edge (${epName}: ${ep.url})`;
+              escalated = true;
+              break;
+            }
+          }
+
+          // If prefer=edge and all edges failed, don't escalate further
+          if (!response && prefer === "edge") {
+            response = "All edge endpoints failed or returned low-quality output.";
+            modelUsed = "none";
+            executedOn = "edge (all failed)";
+          }
+        } else if (prefer === "edge") {
+          response = "No edge endpoints configured. Use optimac_edge_add to register one.";
+          modelUsed = "none";
+          executedOn = "edge (none configured)";
+        }
+      }
+
+      // TIER 3: Escalate to cloud if needed (and not sensitive)
       if (!response && !sensitive) {
         const config = loadConfig();
         const endpoint = config.cloudEndpoints[cloud_provider];
