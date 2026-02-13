@@ -4,15 +4,11 @@
 # System monitoring
 psutil>=5.9.0
 
-# Optional dependencies (install separately if needed)
-# netifaces>=0.11.0      # Advanced networking
-# colorama>=0.4.6        # Terminal output formatting
-# pyfiglet>=0.8.0        # ASCII art banner generation
+# macOS menu bar app
+rumps>=0.4.0
 
-# Development dependencies
-# pytest>=7.0.0
-# black>=22.0.0
-# flake8>=5.0.0
+# Icon generation (optional -- degrades gracefully)
+Pillow>=9.0.0
 
-# Platform: macOS only | Python: 3.8+
+# Platform: macOS only | Python: 3.9+
 # Note: tkinter must be available (included with most Python installations)

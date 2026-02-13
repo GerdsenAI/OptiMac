@@ -1,0 +1,91 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+jobs:
+  build-mcp-server:
+    name: Build MCP Server
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install dependencies
+        working-directory: optimac-mcp-server
+        run: npm ci
+
+      - name: Build
+        working-directory: optimac-mcp-server
+        run: npm run build
+
+      - name: Run tests
+        working-directory: optimac-mcp-server
+        run: npm test
+        continue-on-error: true  # Tests may fail on non-macOS
+
+  build-macos-app:
+    name: Build macOS App
+    runs-on: macos-14
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install Python dependencies
+        run: |
+          pip install --upgrade pip
+          pip install psutil rumps Pillow py2app
+          pip install -e .
+
+      - name: Install create-dmg
+        run: brew install create-dmg
+
+      - name: Build .app and .dmg
+        run: bash scripts/build.sh
+
+      - name: Get version
+        id: version
+        run: echo "tag=${GITHUB_REF#refs/tags/}" >> "$GITHUB_OUTPUT"
+
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: macos-app
+          path: |
+            dist/*.app
+            GerdsenAI_OptiMac_*.dmg
+
+  create-release:
+    name: Create GitHub Release
+    runs-on: ubuntu-latest
+    needs: [build-mcp-server, build-macos-app]
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Download build artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: macos-app
+
+      - name: Create Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            GerdsenAI_OptiMac_*.dmg
+          generate_release_notes: true
+          draft: false
+          prerelease: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

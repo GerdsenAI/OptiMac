@@ -52,6 +52,22 @@ export interface OptiMacConfig {
     anthropic: { url: string; apiKey: string; defaultModel: string };
     openai: { url: string; apiKey: string; defaultModel: string };
   };
+
+  /** Edge endpoints for edge-to-edge inference (LAN devices, other runtimes) */
+  edgeEndpoints: Record<string, EdgeEndpoint>;
+}
+
+export interface EdgeEndpoint {
+  /** Full base URL, e.g. "http://192.168.1.50:8080" */
+  url: string;
+  /** Optional API key for secured endpoints */
+  apiKey?: string;
+  /** Default model to request (auto-detected if omitted) */
+  defaultModel?: string;
+  /** Runtime type for API compatibility */
+  runtimeType: "ollama" | "mlx" | "lmstudio" | "vllm" | "anythingllm" | "openai-compatible";
+  /** Routing priority: lower = tried first (1-100, default 50) */
+  priority: number;
 }
 
 const DEFAULT_CONFIG: OptiMacConfig = {
@@ -116,6 +132,8 @@ const DEFAULT_CONFIG: OptiMacConfig = {
     anthropic: { url: "https://api.anthropic.com/v1", apiKey: "", defaultModel: "claude-sonnet-4-5-20250929" },
     openai: { url: "https://api.openai.com/v1", apiKey: "", defaultModel: "gpt-4o" },
   },
+
+  edgeEndpoints: {},
 };
 
 export function loadConfig(): OptiMacConfig {
