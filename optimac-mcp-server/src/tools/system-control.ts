@@ -643,9 +643,12 @@ Use this when experiencing connectivity issues, high latency to APIs, or after s
       title: "Reduce UI Overhead",
       description: `Disable macOS visual effects, animations, and transparency to reduce GPU overhead.
 
-Sets: reduceMotion, reduceTransparency, disable window animations, fast Mission Control, instant Dock hide.
+Sets: reduceMotion, reduceTransparency, disable window animations, fast Mission Control,
+instant Dock hide, disable Springboard animations, disable Quick Look animations,
+disable window resize animations, fast Dock autohide.
 
-Frees GPU resources for Metal-based MLX inference.`,
+Frees GPU resources for Metal-based MLX inference. All changes are reversible
+by resetting defaults or toggling Accessibility settings.`,
       inputSchema: {},
       annotations: {
         readOnlyHint: false,
@@ -656,18 +659,33 @@ Frees GPU resources for Metal-based MLX inference.`,
     },
     async () => {
       const commands: [string, string[]][] = [
+        // Accessibility: reduce motion & transparency
         ["defaults", ["write", "com.apple.universalaccess", "reduceMotion", "-bool", "true"]],
         ["defaults", ["write", "com.apple.universalaccess", "reduceTransparency", "-bool", "true"]],
+        // Window animations
         ["defaults", ["write", "NSGlobalDomain", "NSAutomaticWindowAnimationsEnabled", "-bool", "false"]],
+        ["defaults", ["write", "NSGlobalDomain", "NSWindowResizeTime", "-float", "0.001"]],
+        // Dock animations
         ["defaults", ["write", "com.apple.dock", "expose-animation-duration", "-float", "0.1"]],
         ["defaults", ["write", "com.apple.dock", "autohide-time-modifier", "-float", "0"]],
+        ["defaults", ["write", "com.apple.dock", "autohide-delay", "-float", "0"]],
         ["defaults", ["write", "com.apple.dock", "launchanim", "-bool", "false"]],
+        // Springboard (Launchpad) animations
+        ["defaults", ["write", "com.apple.dock", "springboard-show-duration", "-float", "0.1"]],
+        ["defaults", ["write", "com.apple.dock", "springboard-hide-duration", "-float", "0.1"]],
+        // Quick Look animation
+        ["defaults", ["write", "-g", "QLPanelAnimationDuration", "-float", "0"]],
+        // Disable smooth scrolling (reduces GPU compositing)
+        ["defaults", ["write", "NSGlobalDomain", "NSScrollAnimationEnabled", "-bool", "false"]],
+        // Disable rubber-band scrolling
+        ["defaults", ["write", "NSGlobalDomain", "NSScrollViewRubberbanding", "-bool", "false"]],
       ];
 
       const results: Record<string, string> = {};
       for (const [cmd, args] of commands) {
         const r = await runCommand(cmd, args);
-        results[args[1] ?? args[0]] = r.exitCode === 0 ? "set" : r.stderr;
+        const key = args.length >= 2 ? args[1] : args[0];
+        results[key] = r.exitCode === 0 ? "set" : r.stderr;
       }
 
       // Restart affected services
@@ -680,7 +698,125 @@ Frees GPU resources for Metal-based MLX inference.`,
       return {
         content: [{
           type: "text",
-          text: JSON.stringify({ status: "complete", settings: results }, null, 2),
+          text: JSON.stringify({
+            status: "complete",
+            settingsApplied: Object.keys(results).length,
+            settings: results,
+          }, null, 2),
+        }],
+      };
+    }
+  );
+
+  // ---- NVRAM SERVER PERFORMANCE MODE ----
+  server.registerTool(
+    "optimac_nvram_perf_mode",
+    {
+      title: "NVRAM Server Performance Mode",
+      description: `Toggle NVRAM server performance mode (boot-args serverperfmode=1).
+
+When enabled, macOS allocates extra kernel resources for network throughput
+and I/O at the cost of higher idle power consumption. Optimizes the system
+for AI inference serving workloads.
+
+Requires a RESTART to take effect.
+
+Actions:
+  - status: Check if server perf mode is currently enabled
+  - enable: Set serverperfmode=1 in boot-args
+  - disable: Remove serverperfmode=1 from boot-args`,
+      inputSchema: {
+        action: z.enum(["status", "enable", "disable"]).default("status")
+          .describe("Action to perform: status, enable, or disable"),
+      },
+      annotations: {
+        readOnlyHint: false,
+        destructiveHint: true,
+        idempotentHint: true,
+        openWorldHint: false,
+      },
+    },
+    async ({ action }) => {
+      // Check current state
+      const current = await runCommand("nvram", ["boot-args"]);
+      const currentArgs = current.exitCode === 0
+        ? current.stdout.replace("boot-args\t", "").trim()
+        : "";
+      const isEnabled = currentArgs.includes("serverperfmode=1");
+
+      if (action === "status") {
+        return {
+          content: [{
+            type: "text",
+            text: JSON.stringify({
+              serverPerfMode: isEnabled ? "enabled" : "disabled",
+              bootArgs: currentArgs || "(none)",
+              note: "Requires restart to apply changes.",
+            }, null, 2),
+          }],
+        };
+      }
+
+      if (action === "enable" && isEnabled) {
+        return {
+          content: [{
+            type: "text",
+            text: JSON.stringify({
+              status: "already_enabled",
+              bootArgs: currentArgs,
+            }, null, 2),
+          }],
+        };
+      }
+
+      if (action === "disable" && !isEnabled) {
+        return {
+          content: [{
+            type: "text",
+            text: JSON.stringify({
+              status: "already_disabled",
+              bootArgs: currentArgs || "(none)",
+            }, null, 2),
+          }],
+        };
+      }
+
+      let result;
+      if (action === "enable") {
+        const newArgs = currentArgs
+          ? `${currentArgs} serverperfmode=1`
+          : "serverperfmode=1";
+        result = await runCommand("sudo", ["nvram", `boot-args=${newArgs}`], { shell: true });
+      } else {
+        // disable
+        const newArgs = currentArgs
+          .replace(/\s*serverperfmode=1\s*/g, " ")
+          .trim();
+        if (newArgs) {
+          result = await runCommand("sudo", ["nvram", `boot-args=${newArgs}`], { shell: true });
+        } else {
+          result = await runCommand("sudo", ["nvram", "-d", "boot-args"], { shell: true });
+        }
+      }
+
+      if (result.exitCode !== 0) {
+        return {
+          content: [{
+            type: "text",
+            text: `Error: ${result.stderr}. Ensure passwordless sudo is configured for 'nvram'.`,
+          }],
+          isError: true,
+        };
+      }
+
+      return {
+        content: [{
+          type: "text",
+          text: JSON.stringify({
+            status: action === "enable" ? "enabled" : "disabled",
+            note: "Restart required for changes to take effect.",
+            previousBootArgs: currentArgs || "(none)",
+          }, null, 2),
         }],
       };
     }

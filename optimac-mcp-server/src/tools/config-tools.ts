@@ -251,16 +251,20 @@ Args:
     "optimac_debloat",
     {
       title: "Apply Debloat Preset",
-      description: `Apply a debloat preset to disable unnecessary macOS services. This is the "nuke the bloat" button.
+      description: `Apply a debloat preset to disable unnecessary macOS services for AI inference optimization.
 
-Presets:
-  - minimal: Disable Siri, Notification Center, iCloud sync only
-  - moderate: + Photo analysis, media analysis, suggestions, Handoff
-  - aggressive: + Location services, App Store auto-updates, Time Machine
+Presets (each tier includes all services from previous tiers):
+  - minimal: Siri, Notification Center, iCloud sync, analytics flush
+  - moderate: + Photo/media analysis, suggestions, knowledge agent, Handoff, sharing
+  - aggressive: + Location, AirPlay, App Store updates, Apple Intelligence (Sequoia/Tahoe)
+  - sequoia: + All Apple Intelligence services, ML server, intelligenceplatformd (macOS 15+/26+)
 
-Each preset builds on the previous. All are reversible with optimac_enable_service.`,
+The "sequoia" tier is specifically designed for macOS Sequoia (15.x) and Tahoe (26.x+)
+where Apple Intelligence competes with local LLM inference for NPU and Metal resources.
+
+All are reversible with optimac_enable_service.`,
       inputSchema: {
-        preset: z.enum(["minimal", "moderate", "aggressive"]).describe("Debloat level"),
+        preset: z.enum(["minimal", "moderate", "aggressive", "sequoia"]).describe("Debloat level"),
       },
       annotations: {
         readOnlyHint: false,
@@ -270,33 +274,57 @@ Each preset builds on the previous. All are reversible with optimac_enable_servi
       },
     },
     async ({ preset }) => {
+      // Tier 1: Siri, notifications, iCloud, analytics
       const minimal = [
         "com.apple.Siri.agent",
         "com.apple.notificationcenterui.agent",
-        "com.apple.bird",
+        "com.apple.bird",                       // iCloud sync
+        "com.apple.parsec-fbf",                 // Siri analytics flush
       ];
 
+      // Tier 2: + photo/media analysis, suggestions, knowledge, sharing
       const moderate = [
         ...minimal,
         "com.apple.photoanalysisd",
         "com.apple.mediaanalysisd",
         "com.apple.suggestd",
         "com.apple.assistantd",
-        "com.apple.parsec-fbf",
         "com.apple.knowledge-agent",
+        "com.apple.siriknowledged",             // Siri knowledge engine
+        "com.apple.cloudd",                     // iCloud daemon (I/O intensive)
+        "com.apple.handoff.agent",              // Handoff protocol
+        "com.apple.sharingd",                   // AirDrop/sharing daemon
       ];
 
+      // Tier 3: + location, AirPlay, updates, Apple Intelligence
       const aggressive = [
         ...moderate,
         "com.apple.locationd",
         "com.apple.AirPlayXPCHelper",
         "com.apple.iCloudNotificationAgent",
         "com.apple.softwareupdated",
+        "com.apple.intelligenceplatformd",      // Apple Intelligence (macOS 15+)
+        "com.apple.photolibraryd",              // Photo library sync
       ];
 
-      const services = preset === "minimal" ? minimal
-        : preset === "moderate" ? moderate
-          : aggressive;
+      // Tier 4: Full AI inference optimization (macOS 15+ Sequoia / 26+ Tahoe)
+      const sequoia = [
+        ...aggressive,
+        "com.apple.mlkit",                      // ML Kit framework
+        "com.apple.mlserver",                   // ML server process
+        "com.apple.triald",                     // Feature trials/experiments
+        "com.apple.screenTimeAgent",            // Screen Time tracking
+        "com.apple.CalendarAgent",              // Calendar sync
+        "com.apple.remindd",                    // Reminders daemon
+        "com.apple.commerce",                   // App Store background
+        "com.apple.touristd",                   // macOS tips/tours
+        "com.apple.tipsd",                      // Tips notifications
+      ];
+
+      const presetMap: Record<string, string[]> = {
+        minimal, moderate, aggressive, sequoia,
+      };
+      const services = presetMap[preset] ?? minimal;
 
       const results: Record<string, string> = {};
 
@@ -313,10 +341,19 @@ Each preset builds on the previous. All are reversible with optimac_enable_servi
         results[svc] = result.exitCode === 0 ? "disabled" : result.stderr;
       }
 
-      // Also disable Spotlight for moderate+
+      // Disable Spotlight for moderate+
       if (preset !== "minimal") {
         const mdutil = await runCommand("sudo", ["mdutil", "-a", "-i", "off"], { shell: true });
         results["spotlight"] = mdutil.exitCode === 0 ? "disabled" : mdutil.stderr;
+      }
+
+      // For sequoia tier, also disable Apple Intelligence via defaults
+      if (preset === "sequoia") {
+        const aiOff = await runCommand(
+          "defaults",
+          ["write", "com.apple.assistant.support", "Assistant Enabled", "-bool", "false"],
+        );
+        results["apple_intelligence_toggle"] = aiOff.exitCode === 0 ? "disabled" : aiOff.stderr;
       }
 
       // Save to config
@@ -332,6 +369,9 @@ Each preset builds on the previous. All are reversible with optimac_enable_servi
             preset,
             servicesDisabled: Object.keys(results).length,
             results,
+            note: preset === "sequoia"
+              ? "Apple Intelligence services disabled. For persistent disabling across OS updates, also toggle off in System Settings > Apple Intelligence & Siri."
+              : undefined,
           }, null, 2),
         }],
       };

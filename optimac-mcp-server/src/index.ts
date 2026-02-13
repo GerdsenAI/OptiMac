@@ -9,9 +9,9 @@
  * Transport: stdio (launched as subprocess by MCP client)
  * Config: ~/.optimac/config.json
  *
- * 60 tools across 9 domains:
+ * 61 tools across 9 domains:
  *   - System Monitoring (6): memory, processes, disk, thermal, power, overview
- *   - System Control (13): purge, DNS, routes, power, power-optimize, spotlight, caches, set-dns, services, enable-service, network-reset, reduce-ui, kill-process
+ *   - System Control (14): purge, DNS, routes, power, power-optimize, spotlight, caches, set-dns, services, enable-service, network-reset, reduce-ui, kill-process, nvram-perf-mode
  *   - AI Stack (7): status, ollama start/stop/models, mlx start/stop, smart swap
  *   - Model Management (9): browse local models, ollama available, serve/load, unload, running models, model dir get/set, RAM check, chat/inference
  *   - Model Tasks (9): bidirectional AI bridge -- task delegation, code review, file generation, file editing, summarization, git commit, cloud escalation, edge escalation, smart 3-tier routing
@@ -34,7 +34,7 @@ import { registerAutonomyTools } from "./tools/autonomy-tools.js";
 import { registerEdgeTools } from "./tools/edge-tools.js";
 import { loadConfig } from "./services/config.js";
 
-const VERSION = "2.5.0";
+const VERSION = "2.5.2";
 
 async function main(): Promise<void> {
   // Initialize config on first run
@@ -67,7 +67,7 @@ async function main(): Promise<void> {
 
   const edgeCount = Object.keys(config.edgeEndpoints).length;
   console.error(`Edge endpoints configured: ${edgeCount}`);
-  console.error("All tools registered (60 tools across 9 domains). Starting stdio transport...");
+  console.error("All tools registered (61 tools across 9 domains). Starting stdio transport...");
 
   // Connect via stdio
   const transport = new StdioServerTransport();
