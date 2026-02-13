@@ -9,11 +9,14 @@ import rumps
 from gerdsenai_optimac.gui.commands import run_command
 from gerdsenai_optimac.gui.dialogs import show_result, StatusProgress
 from gerdsenai_optimac.gui.sudo import run_privileged
+from gerdsenai_optimac.gui.icons import get_icon
 
 
 def build_menu(app):
     """Build Network submenu."""
-    menu = rumps.MenuItem("🌐 Network")
+    menu = rumps.MenuItem(
+        "Network", icon=get_icon("globe"), dimensions=(16, 16), template=True
+    )
 
     menu.add(
         rumps.MenuItem(

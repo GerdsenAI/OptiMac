@@ -9,11 +9,14 @@ from gerdsenai_optimac.gui.commands import run_command
 from gerdsenai_optimac.gui.dialogs import show_result, StatusProgress
 from gerdsenai_optimac.gui.monitors import get_compressed_memory_bytes
 from gerdsenai_optimac.gui.sudo import run_privileged
+from gerdsenai_optimac.gui.icons import get_icon
 
 
 def build_menu(app):
     """Build Performance submenu."""
-    menu = rumps.MenuItem("📊 Performance")
+    menu = rumps.MenuItem(
+        "Performance", icon=get_icon("bar_chart"), dimensions=(16, 16), template=True
+    )
 
     menu.add(
         rumps.MenuItem(

@@ -9,11 +9,14 @@ import rumps
 from gerdsenai_optimac.gui.commands import run_command
 from gerdsenai_optimac.gui.dialogs import show_result, StatusProgress
 from gerdsenai_optimac.gui.sudo import run_privileged
+from gerdsenai_optimac.gui.icons import get_icon
 
 
 def build_menu(app):
     """Build Security submenu."""
-    menu = rumps.MenuItem("🛡️ Security")
+    menu = rumps.MenuItem(
+        "Security", icon=get_icon("shield"), dimensions=(16, 16), template=True
+    )
 
     menu.add(
         rumps.MenuItem(
@@ -100,19 +103,19 @@ def security_overview(app):
     ok, out = run_command(["csrutil", "status"])
     if ok:
         sip_on = "enabled" in out.lower()
-        lines.append(f"  SIP:         {'✅ Enabled' if sip_on else '⚠️  Disabled'}")
+        lines.append(f"  SIP:         {'[OK] Enabled' if sip_on else '[!] Disabled'}")
 
     # Gatekeeper
     ok, out = run_command(["spctl", "--status"])
     if ok:
         gk_on = "enabled" in out.lower()
-        lines.append(f"  Gatekeeper:  {'✅ Enabled' if gk_on else '⚠️  Disabled'}")
+        lines.append(f"  Gatekeeper:  {'[OK] Enabled' if gk_on else '[!] Disabled'}")
 
     # FileVault
     ok, out = run_command(["fdesetup", "status"])
     if ok:
         fv_on = "on" in out.lower()
-        lines.append(f"  FileVault:   {'✅ On' if fv_on else '⚠️  Off'}")
+        lines.append(f"  FileVault:   {'[OK] On' if fv_on else '[!] Off'}")
 
     # Firewall
     ok, out = run_privileged(
@@ -120,7 +123,7 @@ def security_overview(app):
     )
     if ok:
         fw_on = "enabled" in out.lower()
-        lines.append(f"  Firewall:    {'✅ Enabled' if fw_on else '⚠️  Disabled'}")
+        lines.append(f"  Firewall:    {'[OK] Enabled' if fw_on else '[!] Disabled'}")
     else:
         lines.append("  Firewall:    ? (needs admin)")
 
@@ -164,8 +167,9 @@ def firewall_status(app):
         if ok3:
             extra_lines.append(f"  {block.strip()}")
 
-        body = f"  State:  {'ENABLED ✅' if enabled else 'DISABLED ⚠️'}\n" + "\n".join(
-            extra_lines
+        body = (
+            f"  State:  {'ENABLED [OK]' if enabled else 'DISABLED [!]'}\n"
+            + "\n".join(extra_lines)
         )
         show_result("Firewall", "Application Firewall:", body)
     else:
@@ -285,7 +289,7 @@ def open_ports_audit(app):
                 try:
                     port = int(port_part[-1])
                     if port not in known_safe and port < 49152:
-                        suspicious.append(f"  ⚠️  {parts[0]:<16} port {port}")
+                        suspicious.append(f"  [!] {parts[0]:<16} port {port}")
                 except (ValueError, IndexError):
                     pass
 
@@ -334,7 +338,7 @@ def unsigned_processes(app):
                 if not result[0]:
                     name = proc.info.get("name", "?")
                     pid = proc.info.get("pid", "?")
-                    unsigned.append(f"  ⚠️  {name:<20} PID {pid}\n" f"      {exe}")
+                    unsigned.append(f"  [!] {name:<20} PID {pid}\n" f"      {exe}")
             except (_psutil.NoSuchProcess, _psutil.AccessDenied):
                 pass
 
@@ -351,7 +355,7 @@ def unsigned_processes(app):
         else:
             body = (
                 f"  Checked {checked} processes.\n"
-                f"  All verified — no unsigned binaries found ✅"
+                f"  All verified -- no unsigned binaries found [OK]"
             )
 
         show_result(
@@ -402,7 +406,7 @@ def failed_logins(app):
             show_result(
                 "Failed Logins",
                 "No events found",
-                "No authentication failures in the last hour ✅",
+                "No authentication failures in the last hour [OK]",
             )
 
     threading.Thread(target=_worker, daemon=True).start()
@@ -464,7 +468,7 @@ def connection_audit(app):
                 + "\n\n  Use 'whois <IP>' to investigate"
             )
         else:
-            body = "  No foreign connections detected ✅\n" "  All traffic is local"
+            body = "  No foreign connections detected [OK]\n" "  All traffic is local"
 
         show_result(
             "Connection Audit",
@@ -512,12 +516,12 @@ def malware_check(app):
                         name = item.name.lower()
                         # Flag non-Apple, non-standard items
                         if not name.startswith("com.apple") and item.suffix == ".plist":
-                            findings.append(f"  📋 {item}")
+                            findings.append(f"  [+] {item}")
                 except PermissionError:
-                    findings.append(f"  🔒 {path} (access denied)")
+                    findings.append(f"  [LOCKED] {path} (access denied)")
             else:
                 checked += 1
-                findings.append(f"  ⚠️  {path}")
+                findings.append(f"  [!] {path}")
 
         progress.finish()
 
@@ -530,7 +534,9 @@ def malware_check(app):
                 "\n  Review manually before removing."
             )
         else:
-            body = f"  Scanned {checked} locations.\n" "  No suspicious paths found ✅"
+            body = (
+                f"  Scanned {checked} locations.\n" "  No suspicious paths found [OK]"
+            )
 
         show_result(
             "Malware Path Check",

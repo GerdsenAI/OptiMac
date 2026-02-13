@@ -16,11 +16,14 @@ from gerdsenai_optimac.gui.sudo import (
     run_privileged,
     run_privileged_batch,
 )
+from gerdsenai_optimac.gui.icons import get_icon
 
 
 def build_menu(app):
     """Build Optimize submenu."""
-    menu = rumps.MenuItem("🔧 Optimize")
+    menu = rumps.MenuItem(
+        "Optimize", icon=get_icon("wrench"), dimensions=(16, 16), template=True
+    )
 
     menu.add(
         rumps.MenuItem(
@@ -321,7 +324,7 @@ def full_maintenance(app):
 
         lines = []
         for (desc, _cmd), (ok, out) in zip(commands, results):
-            icon = "✅" if ok else "❌"
+            icon = "[OK]" if ok else "[FAIL]"
             lines.append(f"  {icon} {desc}")
             if not ok and out:
                 lines.append(f"     {out[:80]}")

@@ -34,6 +34,8 @@ from gerdsenai_optimac.gui.monitors import (
     NetworkMonitor,
 )
 from gerdsenai_optimac.gui.dialogs import show_result
+from gerdsenai_optimac.gui.icons import get_icon
+from gerdsenai_optimac.gui.terminal_widget import TerminalWidget
 
 # Handler modules — each provides build_menu(app) -> MenuItem
 from gerdsenai_optimac.gui.handlers import (
@@ -77,6 +79,9 @@ class OptiMacMenuBar(rumps.App):
         # Status tracking
         self._monitoring = False
         self._monitor_thread = None
+
+        # Terminal widget (floating mini-terminal)
+        self.terminal = TerminalWidget()
 
         # Build menu structure
         self._build_menu()
@@ -165,7 +170,9 @@ class OptiMacMenuBar(rumps.App):
         self.menu.add(optimize.build_menu(self))
 
         # Edge Endpoints (from config)
-        edge_menu = rumps.MenuItem("📡 Edge Endpoints")
+        edge_menu = rumps.MenuItem(
+            "Edge Endpoints", icon=get_icon("radio"), dimensions=(16, 16), template=True
+        )
         edge_menu.add(
             rumps.MenuItem(
                 "List Endpoints",
@@ -189,16 +196,18 @@ class OptiMacMenuBar(rumps.App):
         self.menu.add(self.monitor_toggle)
 
         # Utility
+        self.terminal_toggle = rumps.MenuItem(
+            "Show Terminal",
+            callback=self._toggle_terminal,
+            icon=get_icon("terminal"),
+            dimensions=(16, 16),
+            template=True,
+        )
+        self.menu.add(self.terminal_toggle)
         self.menu.add(
             rumps.MenuItem(
                 "Open Config File",
                 callback=self._open_config,
-            )
-        )
-        self.menu.add(
-            rumps.MenuItem(
-                "View in Terminal",
-                callback=self._open_terminal,
             )
         )
 
@@ -264,9 +273,9 @@ class OptiMacMenuBar(rumps.App):
                         )
                         == 0
                     )
-                icon = "● OK" if reachable else "✗ DOWN"
+                icon = "[OK]" if reachable else "[DOWN]"
             except Exception:
-                icon = "? ERROR"
+                icon = "[ERR]"
             lines.append(f"  {name:<16} {icon}")
 
         show_result(
@@ -329,17 +338,12 @@ class OptiMacMenuBar(rumps.App):
                 "or use the MCP server to configure.",
             )
 
-    def _open_terminal(self, _):
-        import subprocess
-
-        subprocess.Popen(
-            [
-                "open",
-                "-a",
-                "Terminal",
-                str(Path.home() / ".optimac"),
-            ]
-        )
+    def _toggle_terminal(self, sender):
+        self.terminal.toggle()
+        if self.terminal.is_visible():
+            sender.title = "Hide Terminal"
+        else:
+            sender.title = "Show Terminal"
 
     def _quit(self, _):
         self._monitoring = False

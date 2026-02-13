@@ -11,11 +11,14 @@ from gerdsenai_optimac.gui.dialogs import (
     StatusProgress,
 )
 from gerdsenai_optimac.gui.sudo import run_privileged
+from gerdsenai_optimac.gui.icons import get_icon
 
 
 def build_menu(app):
     """Build System Control submenu."""
-    menu = rumps.MenuItem("⚙️ System Control")
+    menu = rumps.MenuItem(
+        "System Control", icon=get_icon("settings"), dimensions=(16, 16), template=True
+    )
 
     menu.add(
         rumps.MenuItem(

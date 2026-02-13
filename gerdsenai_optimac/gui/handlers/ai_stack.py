@@ -10,11 +10,14 @@ import rumps
 from gerdsenai_optimac.gui.commands import run_command, run_command_threaded
 from gerdsenai_optimac.gui.dialogs import show_result, StatusProgress
 from gerdsenai_optimac.gui.sudo import run_privileged
+from gerdsenai_optimac.gui.icons import get_icon
 
 
 def build_menu(app):
     """Build AI Stack submenu and attach callbacks to *app*."""
-    menu = rumps.MenuItem("🧠 AI Stack")
+    menu = rumps.MenuItem(
+        "AI Stack", icon=get_icon("brain"), dimensions=(16, 16), template=True
+    )
 
     menu.add(
         rumps.MenuItem(
