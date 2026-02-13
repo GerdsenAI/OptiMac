@@ -64,6 +64,8 @@ pyinstaller \
     --hidden-import gerdsenai_optimac.gui \
     --hidden-import gerdsenai_optimac.gui.monitors \
     --hidden-import gerdsenai_optimac.gui.commands \
+    --hidden-import gerdsenai_optimac.gui.dialogs \
+    --hidden-import gerdsenai_optimac.gui.sudo \
     --hidden-import gerdsenai_optimac.gui.themes \
     --osx-bundle-identifier com.gerdsenai.optimac \
     --noconfirm \
