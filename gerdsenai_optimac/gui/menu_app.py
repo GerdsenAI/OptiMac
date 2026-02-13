@@ -59,10 +59,10 @@ class OptiMacMenuBar(rumps.App):
             quit_button=None,  # We'll add our own
         )
 
-        # Mark the icon as a template image so macOS adapts it
-        # for light/dark menu bar automatically.
+        # Template images are black silhouettes with alpha.
+        # macOS renders them white on dark bars, black on light.
         if icon_path:
-            self._set_template_icon()
+            self.template = True
 
         # Initialize monitors
         self.silicon_monitor = AppleSiliconMonitor()
@@ -84,45 +84,6 @@ class OptiMacMenuBar(rumps.App):
             if icon:
                 return icon
         return None
-
-    def _set_template_icon(self):
-        """Mark the NSImage as a template so macOS handles
-        dark/light appearance automatically."""
-        try:
-            import AppKit  # noqa: F401
-
-            # rumps sets the icon on the status item; we need to
-            # flag the underlying NSImage as a template.
-            # This runs after super().__init__ sets the icon.
-            timer = threading.Timer(0.1, self._apply_template_flag)
-            timer.daemon = True
-            timer.start()
-        except ImportError:
-            pass  # pyobjc not available — icon stays as-is
-
-    def _apply_template_flag(self):
-        """Apply template flag to the status bar icon image."""
-        try:
-            status_item = self._nsapp_status_item()
-            if status_item:
-                img = status_item.button().image()
-                if img:
-                    img.setTemplate_(True)
-        except Exception:
-            pass
-
-    def _nsapp_status_item(self):
-        """Get the underlying NSStatusItem from rumps internals."""
-        try:
-            # rumps stores the status item as _status_item
-            return self._nsapp.nsstatusitem
-        except Exception:
-            pass
-        try:
-            # Fallback: access via the app's _nsapp attribute
-            return getattr(self, "_nsapp", None)
-        except Exception:
-            return None
 
     def _load_config(self):
         """Load OptiMac config from ~/.optimac/config.json."""
