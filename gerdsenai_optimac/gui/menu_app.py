@@ -64,6 +64,10 @@ class OptiMacMenuBar(rumps.App):
         if icon_path:
             self.template = True
 
+        # Set app icon so dialogs show the GerdsenAI logo
+        # instead of the default Python rocket.
+        self._set_app_icon()
+
         # Initialize monitors
         self.silicon_monitor = AppleSiliconMonitor()
         self.network_monitor = NetworkMonitor()
@@ -84,6 +88,27 @@ class OptiMacMenuBar(rumps.App):
             if icon:
                 return icon
         return None
+
+    def _set_app_icon(self):
+        """Set the application icon to the GerdsenAI logo.
+
+        When running from source (not a .app bundle), macOS shows
+        the Python rocket icon in dialogs. This replaces it with
+        the GerdsenAI Neural G so every alert, window, and
+        notification feels branded.
+        """
+        try:
+            from AppKit import NSApplication, NSImage
+
+            logo = get_logo_path()
+            if logo:
+                img = NSImage.alloc().initWithContentsOfFile_(logo)
+                if img:
+                    NSApplication.sharedApplication().setApplicationIconImage_(img)
+        except ImportError:
+            pass  # pyobjc not available
+        except Exception:
+            pass  # non-critical — dialogs still work
 
     def _load_config(self):
         """Load OptiMac config from ~/.optimac/config.json."""
