@@ -1,19 +1,21 @@
 # OptiMac MCP Server
 
-System-level AI inference optimizer for Mac Mini M4 / M4 Pro. Controls system resources, manages AI inference stacks (Ollama, LM Studio, MLX) via MCP, and provides intelligent model management with RAM safety checks -- giving Claude full admin control over your machine's performance.
+Bidirectional AI inference optimizer for Mac Mini M4 / M4 Pro. Local and cloud AI as equal peers: controls system resources, manages AI inference stacks (Ollama, LM Studio, MLX), bridges local ↔ cloud inference via MCP, and provides intelligent model management with RAM safety checks.
 
 ## Table of Contents
 
 - [Quick Start](#quick-start)
 - [Add to Claude Desktop](#add-to-claude-desktop)
 - [Add to Claude Code](#add-to-claude-code)
-- [Tools (40 total)](#tools-40-total)
+- [Tools (55 total)](#tools-55-total)
   - [System Monitoring (6)](#system-monitoring-6)
   - [System Control (13)](#system-control-13)
   - [AI Stack Management (7)](#ai-stack-management-7)
-  - [Model Management (8)](#model-management-8----new)
+  - [Model Management (9)](#model-management-9)
+  - [Model Tasks (8)](#model-tasks-8)
   - [Memory Pressure (2)](#memory-pressure-2)
   - [Configuration (6)](#configuration-6)
+- [Architecture](#architecture)
 - [RAM Headroom Policy](#ram-headroom-policy)
 - [Configuration](#configuration)
 - [Requirements](#requirements)
@@ -49,7 +51,7 @@ Edit `~/Library/Application Support/Claude/claude_desktop_config.json`:
 claude mcp add optimac node /path/to/optimac-mcp-server/dist/index.js
 ```
 
-## Tools (40 total)
+## Tools (55 total)
 
 For detailed documentation of every tool with parameters, return values, and examples, see [MCP_COMMANDS.md](../MCP_COMMANDS.md).
 
@@ -91,7 +93,7 @@ For detailed documentation of every tool with parameters, return values, and exa
 | `optimac_mlx_stop` | Stop MLX-LM server |
 | `optimac_swap_model` | Smart model swap (stop, purge, restart) |
 
-### Model Management (8) -- NEW
+### Model Management (9)
 | Tool | Description |
 |------|------------|
 | `optimac_models_available` | Browse local models filtered by RAM fit |
@@ -102,7 +104,19 @@ For detailed documentation of every tool with parameters, return values, and exa
 | `optimac_model_dir_set` | Set model base directory |
 | `optimac_model_dir_get` | Get model base directory |
 | `optimac_model_ram_check` | Check if a model fits in available RAM |
-| `optimac_model_chat` | Send a prompt to the loaded model and get a response |
+| `optimac_model_chat` | Send a prompt to the loaded model |
+
+### Model Tasks (8)
+| Tool | Description |
+|------|------------|
+| `optimac_model_task` | Free-form local model task with file context |
+| `optimac_model_code_review` | AI code review on git diffs |
+| `optimac_model_generate` | Generate code from description |
+| `optimac_model_edit` | Edit files with natural-language instructions |
+| `optimac_model_summarize` | Summarize files |
+| `optimac_model_commit` | Generate conventional commit messages |
+| `optimac_cloud_escalate` | Escalate to cloud AI (OpenAI/Anthropic/Google) |
+| `optimac_model_route` | Smart local→cloud router with quality gate |
 
 ### Memory Pressure (2)
 | Tool | Description |
@@ -119,6 +133,17 @@ For detailed documentation of every tool with parameters, return values, and exa
 | `optimac_config_unprotect_process` | Remove from protected list |
 | `optimac_config_set_port` | Set AI service port |
 | `optimac_debloat` | Apply debloat preset (minimal/moderate/aggressive) |
+
+## Architecture
+
+OptiMac uses a **bidirectional 50/50 architecture** where local and cloud AI are equal peers:
+
+- **Local models** handle privacy-sensitive tasks, latency-critical work, and offline operation
+- **Cloud models** handle complex reasoning, large-context tasks, and specialized capabilities
+- **Smart routing** (`optimac_model_route`) tries local first, escalates to cloud when quality is insufficient
+- **Streaming inference** support for both blocking and SSE modes
+
+All inference flows through a unified engine (`services/inference.ts`) with error classification and auto-recovery.
 
 ## RAM Headroom Policy
 

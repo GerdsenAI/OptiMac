@@ -1,6 +1,6 @@
 # OptiMac MCP Server - Command Reference
 
-Version 1.2.0 | 40 tools across 6 domains
+Version 1.3.0 | 55 tools across 8 domains
 
 All tools are accessible via Claude Desktop or Claude Code when the OptiMac MCP server is configured. Each tool returns structured JSON responses.
 
@@ -9,9 +9,11 @@ All tools are accessible via Claude Desktop or Claude Code when the OptiMac MCP 
 1. System Monitoring (6 tools)
 2. System Control (13 tools)
 3. AI Stack Management (7 tools)
-4. Model Management (8 tools)
-5. Memory Pressure (2 tools)
-6. Configuration (6 tools)
+4. Model Management (9 tools)
+5. Model Tasks (8 tools)
+6. Memory Pressure (2 tools)
+7. Configuration (6 tools)
+8. Autonomy (4 tools)
 
 ---
 
@@ -335,7 +337,7 @@ Intelligently swap the currently loaded model for a different one. Handles the f
 
 ## 4. Model Management
 
-Browse, serve, and manage local model files with RAM safety checks.
+Browse, serve, and manage local model files with RAM safety checks. (9 tools)
 
 ### optimac_models_available
 
@@ -487,7 +489,123 @@ Automatically detects which runtime has a model loaded. If multiple are running,
 
 ---
 
-## 5. Memory Pressure
+## 5. Model Tasks
+
+Bidirectional AI bridge tools. Local ↔ cloud as equal peers: local models handle privacy-sensitive and latency-critical tasks, cloud models handle complex reasoning and large-context work. The MCP server bridges both directions.
+
+### optimac_model_task
+
+Send a free-form task to the local model with file context. The model reads specified files, processes them with a custom prompt, and returns results.
+
+**Parameters:**
+- `prompt` (string): The task description
+- `files` (string[], optional): Paths to include as context
+- `system` (string, optional): Override system prompt
+
+**Returns:** Model response with file context
+
+**Example use:** "Ask the local model to explain this code"
+
+---
+
+### optimac_model_code_review
+
+Run a local AI code review on the latest git diff in a repository. Uses safe `cwd`-based git commands with input validation.
+
+**Parameters:**
+- `repo_path` (string): Absolute path to git repository
+- `branch` (string, optional): Branch to review (default: current)
+- `against` (string, optional): Base branch to diff against (default: HEAD~1)
+
+**Returns:** Code review with findings categorized by severity
+
+**Example use:** "Review my latest commit in /path/to/repo"
+
+---
+
+### optimac_model_generate
+
+Generate code from a natural-language description using the local model.
+
+**Parameters:**
+- `description` (string): What to generate
+- `language` (string, optional): Target language (default: inferred)
+- `output_file` (string, optional): Where to write the result
+
+**Returns:** Generated code
+
+---
+
+### optimac_model_edit
+
+Edit existing files using natural-language instructions. Reads the file, sends it to the local model with the instructions, and writes back the result.
+
+**Parameters:**
+- `file_path` (string): File to edit
+- `instructions` (string): What to change
+- `create_backup` (boolean, optional): Create .bak file first (default true)
+
+**Returns:** Diff of changes, write confirmation
+
+**Safety:** Validates file paths with `isPathSafe` to prevent writes outside home directory.
+
+---
+
+### optimac_model_summarize
+
+Summarize one or more files using the local model.
+
+**Parameters:**
+- `files` (string[]): Files to summarize
+- `style` (string, optional): Summary style ("brief", "detailed", "technical")
+
+**Returns:** Summary text
+
+---
+
+### optimac_model_commit
+
+Generate a conventional commit message from the current git diff using the local model. Uses safe `cwd`-based git commands with sanitized refs.
+
+**Parameters:**
+- `repo_path` (string): Absolute path to git repository
+- `auto_commit` (boolean, optional): Stage and commit automatically (default false)
+
+**Returns:** Generated commit message, optional commit confirmation
+
+---
+
+### optimac_cloud_escalate
+
+Escalate a task to a cloud AI provider (OpenAI, Anthropic, Google) when local models can't handle the complexity. Requires API keys set in environment variables.
+
+**Parameters:**
+- `prompt` (string): The task to send to the cloud
+- `provider` (string, optional): "openai", "anthropic", or "google" (default: openai)
+- `model` (string, optional): Specific model (default: provider's latest)
+- `files` (string[], optional): Files to include as context
+
+**Returns:** Cloud model response with provider info and usage stats
+
+---
+
+### optimac_model_route
+
+Smart router: sends a task to the local model first, evaluates response quality, and automatically escalates to cloud if the response is insufficient. Implements the bidirectional 50/50 philosophy.
+
+**Parameters:**
+- `prompt` (string): The task to route
+- `files` (string[], optional): Files to include as context
+- `cloud_provider` (string, optional): Fallback cloud provider (default: openai)
+- `output_file` (string, optional): Write result to file
+
+**Returns:** Response with routing metadata: where it was executed, whether it was escalated, quality assessment
+
+**Example use:** "Route this task to the best available model"
+
+---
+
+## 6. Memory Pressure
 
 Tiered memory management tools.
 
@@ -521,7 +639,58 @@ Run a complete maintenance cycle (8 steps): memory pressure check, purge memory,
 
 ---
 
-## 6. Configuration
+## 8. Autonomy
+
+Background monitoring, audit logging, and system health tracking.
+
+### optimac_watchdog_start
+
+Start the background watchdog that monitors memory pressure and AI stack health on a configurable interval. Auto-purges memory at critical pressure.
+
+**Parameters:**
+- `interval_minutes` (number, optional): Check interval in minutes (default: from config maintenanceIntervalSec, typically 360 = 6h)
+
+**Returns:** Watchdog status (running, intervalMs, checksPerformed, lastCheck, autoActions)
+
+**Example use:** "Start monitoring my system every 30 minutes"
+
+---
+
+### optimac_watchdog_stop
+
+Stop the background watchdog.
+
+**Parameters:** none
+
+**Returns:** Watchdog status
+
+---
+
+### optimac_watchdog_status
+
+Get current watchdog status: running state, interval, checks performed, and auto-actions taken.
+
+**Parameters:** none
+
+**Returns:** Watchdog status object
+
+---
+
+### optimac_audit_read
+
+Read the most recent entries from the OptiMac audit log (~/.optimac/audit.jsonl). Returns structured tool execution history with timing, result status, and error details.
+
+**Parameters:**
+- `limit` (number, optional): Number of entries to return (default 50, max 500)
+- `tool_filter` (string, optional): Filter entries by tool name (e.g., "watchdog", "optimac_purge_memory")
+
+**Returns:** Array of audit entries with timestamp, tool, args, result, durationMs, errorType
+
+**Example use:** "Show me the last 10 watchdog actions"
+
+---
+
+## 7. Configuration
 
 Manage OptiMac settings at ~/.optimac/config.json. Shared between MCP server and GUI.
 
