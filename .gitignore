@@ -23,3 +23,11 @@ venv/
 dist/
 build/
 __pycache__/
+
+# Build artifacts
+build/
+dist/
+*.spec
+*.dmg
+.venv/
+_logo/OptiMac.iconset/

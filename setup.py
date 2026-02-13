@@ -1,10 +1,11 @@
 """
-GerdsenAI OptiMac - py2app packaging configuration
+GerdsenAI OptiMac - py2app packaging configuration (LEGACY)
 
-Build .app bundle:
-    python setup.py py2app
+Primary build tool is PyInstaller — see scripts/build.sh.
+This file is kept for reference. py2app is broken on Python 3.14+.
 
-For package installation, see pyproject.toml.
+Build with PyInstaller instead:
+    bash scripts/build.sh
 """
 
 from setuptools import setup
@@ -15,7 +16,7 @@ DATA_FILES = []
 
 OPTIONS = {
     "argv_emulation": False,
-    "iconfile": "_logo/Gerdsen_AI_Icon.icon/icon_512x512.png",
+    "iconfile": "_logo/OptiMac.icns",
     "packages": ["gerdsenai_optimac", "rumps", "psutil"],
     "includes": ["PIL"],
     "resources": [
