@@ -31,7 +31,7 @@ Returns the memory stats before and after purge so you can verify it worked.`,
     async () => {
       // Snapshot before
       const before = await runCommand("vm_stat");
-      const sysctl = await runCommand("sysctl", ["hw.memsize"]);
+      const sysctl = await runCommand("sysctl", ["hw.memsize", "hw.pagesize"]);
 
       // Purge
       const purge = await runCommand("sudo", ["purge"], { shell: true, timeout: LONG_TIMEOUT });

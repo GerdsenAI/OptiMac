@@ -25,6 +25,17 @@ export function parseVmStat(vmStatOutput: string, sysctl: string): MemoryStats {
   const lines = vmStatOutput.split("\n");
   const vals: Record<string, number> = {};
 
+  // Parse actual page size from header: "Mach Virtual Memory Statistics: (page size of NNNNN bytes)"
+  let pageSize = 16384; // Apple Silicon default
+  const headerMatch = vmStatOutput.match(/page size of (\d+) bytes/);
+  if (headerMatch) {
+    pageSize = parseInt(headerMatch[1], 10);
+  } else {
+    // Fallback: try sysctl hw.pagesize
+    const pageSizeMatch = sysctl.match(/hw\.pagesize:\s*(\d+)/);
+    if (pageSizeMatch) pageSize = parseInt(pageSizeMatch[1], 10);
+  }
+
   for (const line of lines) {
     const match = line.match(/^(.+?):\s+([\d.]+)/);
     if (match) {
@@ -33,23 +44,23 @@ export function parseVmStat(vmStatOutput: string, sysctl: string): MemoryStats {
     }
   }
 
-  const pageSize = vals["mach_virtual_memory_statistics__page_size_of_4096_bytes"] ?? 4096;
-
   // Extract total physical memory from sysctl
   const memMatch = sysctl.match(/hw\.memsize:\s*(\d+)/);
   const totalBytes = memMatch ? parseInt(memMatch[1], 10) : 16 * 1024 * 1024 * 1024;
   const totalMB = Math.round(totalBytes / (1024 * 1024));
 
-  const free = (vals["pages_free"] ?? 0) * 4096;
-  const active = (vals["pages_active"] ?? 0) * 4096;
-  const inactive = (vals["pages_inactive"] ?? 0) * 4096;
-  const speculative = (vals["pages_speculative"] ?? 0) * 4096;
-  const wired = (vals["pages_wired_down"] ?? 0) * 4096;
-  const compressed = (vals["pages_occupied_by_compressor"] ?? 0) * 4096;
-  const purgeable = (vals["pages_purgeable"] ?? 0) * 4096;
-  const fileBacked = (vals["file_backed_pages"] ?? 0) * 4096;
-  const anonymous = (vals["anonymous_pages"] ?? 0) * 4096;
+  const free = (vals["pages_free"] ?? 0) * pageSize;
+  const active = (vals["pages_active"] ?? 0) * pageSize;
+  const inactive = (vals["pages_inactive"] ?? 0) * pageSize;
+  const speculative = (vals["pages_speculative"] ?? 0) * pageSize;
+  const wired = (vals["pages_wired_down"] ?? 0) * pageSize;
+  const compressed = (vals["pages_occupied_by_compressor"] ?? 0) * pageSize;
+  const purgeable = (vals["pages_purgeable"] ?? 0) * pageSize;
+  const fileBacked = (vals["file_backed_pages"] ?? 0) * pageSize;
+  const anonymous = (vals["anonymous_pages"] ?? 0) * pageSize;
 
+  // Match macOS Activity Monitor: used = app memory + wired + compressed
+  // app memory ~ active (anonymous), wired = kernel, compressed = compressor-occupied
   const usedBytes = active + wired + compressed;
   const freeBytes = totalBytes - usedBytes;
 
@@ -60,7 +71,7 @@ export function parseVmStat(vmStatOutput: string, sysctl: string): MemoryStats {
   else if (usedPercent > 0.75) pressureLevel = "warning";
 
   return {
-    pageSize: 4096,
+    pageSize,
     freePages: vals["pages_free"] ?? 0,
     activePages: vals["pages_active"] ?? 0,
     inactivePages: vals["pages_inactive"] ?? 0,
@@ -70,7 +81,7 @@ export function parseVmStat(vmStatOutput: string, sysctl: string): MemoryStats {
     purgeablePages: vals["pages_purgeable"] ?? 0,
     fileBacked: Math.round(fileBacked / (1024 * 1024)),
     anonymous: Math.round(anonymous / (1024 * 1024)),
-    swapUsedMB: vals["swapins"] ?? 0,
+    swapUsedMB: 0, // Populated from sysctl vm.swapusage if available
     totalPhysicalMB: totalMB,
     usedMB: Math.round(usedBytes / (1024 * 1024)),
     freeMB: Math.round(freeBytes / (1024 * 1024)),
@@ -127,7 +138,8 @@ export function parseDiskUsage(dfOutput: string): DiskUsage[] {
 
   for (const line of lines) {
     const parts = line.trim().split(/\s+/);
-    if (parts.length < 6) continue;
+    // macOS df -k has 9 columns: Filesystem 1024-blocks Used Available Capacity iused ifree %iused Mounted
+    if (parts.length < 9) continue;
 
     const sizeBlocks = parseInt(parts[1], 10);
     const usedBlocks = parseInt(parts[2], 10);
@@ -136,11 +148,11 @@ export function parseDiskUsage(dfOutput: string): DiskUsage[] {
 
     disks.push({
       filesystem: parts[0],
-      sizeMB: Math.round(sizeBlocks / 2048), // 512-byte blocks to MB
-      usedMB: Math.round(usedBlocks / 2048),
-      availableMB: Math.round(availBlocks / 2048),
+      sizeMB: Math.round(sizeBlocks / 1024), // 1024-byte blocks (df -k) to MB
+      usedMB: Math.round(usedBlocks / 1024),
+      availableMB: Math.round(availBlocks / 1024),
       usedPercent: percent,
-      mountPoint: parts.slice(5).join(" "),
+      mountPoint: parts.slice(8).join(" "), // Mount point is column 9+
     });
   }
 

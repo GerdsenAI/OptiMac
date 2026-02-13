@@ -42,6 +42,9 @@ export interface OptiMacConfig {
     lmstudio: number;
     mlx: number;
   };
+
+  /** Base directory for model files (GGUF, SafeTensors, etc.) */
+  modelBaseDir: string;
 }
 
 const DEFAULT_CONFIG: OptiMacConfig = {
@@ -98,6 +101,8 @@ const DEFAULT_CONFIG: OptiMacConfig = {
     lmstudio: 1234,
     mlx: 8080,
   },
+
+  modelBaseDir: "",
 };
 
 export function loadConfig(): OptiMacConfig {

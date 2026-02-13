@@ -42,7 +42,7 @@ This is the core tool for keeping a 16GB M4 running inference without swap death
       // Get memory stats
       const [vmStat, sysctl, ps] = await Promise.all([
         runCommand("vm_stat"),
-        runCommand("sysctl", ["hw.memsize"]),
+        runCommand("sysctl", ["hw.memsize", "hw.pagesize"]),
         runCommand("ps", ["aux", "-m"]),
       ]);
 
@@ -161,7 +161,7 @@ This is the single most important tool. Schedule it or run it manually.`,
       // 1. Memory pressure check
       const [vmStat, sysctl, ps] = await Promise.all([
         runCommand("vm_stat"),
-        runCommand("sysctl", ["hw.memsize"]),
+        runCommand("sysctl", ["hw.memsize", "hw.pagesize"]),
         runCommand("ps", ["aux", "-m"]),
       ]);
 

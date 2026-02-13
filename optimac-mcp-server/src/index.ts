@@ -9,10 +9,11 @@
  * Transport: stdio (launched as subprocess by MCP client)
  * Config: ~/.optimac/config.json
  *
- * 32 tools across 5 domains:
+ * 39 tools across 6 domains:
  *   - System Monitoring (6): memory, processes, disk, thermal, power, overview
  *   - System Control (13): purge, DNS, routes, power, power-optimize, spotlight, caches, set-dns, services, enable-service, network-reset, reduce-ui, kill-process
  *   - AI Stack (7): status, ollama start/stop/models, mlx start/stop, smart swap
+ *   - Model Management (7): browse local models, ollama available, serve/load, unload, running models, model dir, RAM check
  *   - Memory Pressure (2): pressure check with tiered response, full maintenance cycle
  *   - Configuration (6): get/set config, protect/unprotect processes, ports, debloat presets
  */
@@ -24,9 +25,10 @@ import { registerSystemControlTools } from "./tools/system-control.js";
 import { registerAIStackTools } from "./tools/ai-stack.js";
 import { registerMemoryPressureTools } from "./tools/memory-pressure.js";
 import { registerConfigTools } from "./tools/config-tools.js";
+import { registerModelManagementTools } from "./tools/model-management.js";
 import { loadConfig } from "./services/config.js";
 
-const VERSION = "1.0.0";
+const VERSION = "1.1.0";
 
 async function main(): Promise<void> {
   // Initialize config on first run
@@ -52,8 +54,9 @@ async function main(): Promise<void> {
   registerAIStackTools(server);
   registerMemoryPressureTools(server);
   registerConfigTools(server);
+  registerModelManagementTools(server);
 
-  console.error("All tools registered. Starting stdio transport...");
+  console.error("All tools registered (39 tools across 6 domains). Starting stdio transport...");
 
   // Connect via stdio
   const transport = new StdioServerTransport();
