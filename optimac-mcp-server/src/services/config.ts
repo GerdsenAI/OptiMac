@@ -45,6 +45,13 @@ export interface OptiMacConfig {
 
   /** Base directory for model files (GGUF, SafeTensors, etc.) */
   modelBaseDir: string;
+
+  /** Cloud AI endpoints for edge-to-cloud escalation */
+  cloudEndpoints: {
+    openrouter: { url: string; apiKey: string; defaultModel: string };
+    anthropic: { url: string; apiKey: string; defaultModel: string };
+    openai: { url: string; apiKey: string; defaultModel: string };
+  };
 }
 
 const DEFAULT_CONFIG: OptiMacConfig = {
@@ -103,6 +110,12 @@ const DEFAULT_CONFIG: OptiMacConfig = {
   },
 
   modelBaseDir: "",
+
+  cloudEndpoints: {
+    openrouter: { url: "https://openrouter.ai/api/v1", apiKey: "", defaultModel: "anthropic/claude-sonnet-4" },
+    anthropic: { url: "https://api.anthropic.com/v1", apiKey: "", defaultModel: "claude-sonnet-4-5-20250929" },
+    openai: { url: "https://api.openai.com/v1", apiKey: "", defaultModel: "gpt-4o" },
+  },
 };
 
 export function loadConfig(): OptiMacConfig {
