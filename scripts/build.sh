@@ -67,6 +67,13 @@ pyinstaller \
     --hidden-import gerdsenai_optimac.gui.dialogs \
     --hidden-import gerdsenai_optimac.gui.sudo \
     --hidden-import gerdsenai_optimac.gui.themes \
+    --hidden-import gerdsenai_optimac.gui.handlers \
+    --hidden-import gerdsenai_optimac.gui.handlers.ai_stack \
+    --hidden-import gerdsenai_optimac.gui.handlers.system \
+    --hidden-import gerdsenai_optimac.gui.handlers.performance \
+    --hidden-import gerdsenai_optimac.gui.handlers.network \
+    --hidden-import gerdsenai_optimac.gui.handlers.security \
+    --hidden-import gerdsenai_optimac.gui.handlers.optimize \
     --osx-bundle-identifier com.gerdsenai.optimac \
     --noconfirm \
     gerdsenai_optimac/gui/menu_app.py 2>&1 | tail -5
