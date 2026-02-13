@@ -137,7 +137,7 @@ function walkDir(
         walkDir(full, maxDepth, depth + 1, results, seen, maxFiles);
       }
     }
-  } catch { /* permission denied */ }
+  } catch (e) { console.error(`[optimac] walkDir permission denied for ${dir}:`, e instanceof Error ? e.message : e); }
 }
 
 function buildFileContext(files: Array<{ path: string; content: string }>, basePath?: string): string {
@@ -490,7 +490,7 @@ Output the COMPLETE modified file. Include ALL content, not just the changed par
       if (create_backup) {
         try {
           writeFileSync(`${file_path}.bak`, originalContent, "utf-8");
-        } catch { /* backup failed, continue anyway */ }
+        } catch (e) { console.error("[optimac] backup failed:", e instanceof Error ? e.message : e); }
       }
 
       if (!isPathSafe(file_path)) {
@@ -883,7 +883,8 @@ Args:
             }, null, 2),
           }],
         };
-      } catch {
+      } catch (e) {
+        console.error("[optimac] cloud response parse error:", e instanceof Error ? e.message : e);
         return {
           content: [{
             type: "text",
@@ -1041,7 +1042,8 @@ Args:
             usage = parsed.usage ?? {};
             executedOn = `cloud (${cloud_provider})`;
             escalated = true;
-          } catch {
+          } catch (e) {
+            console.error("[optimac] cloud parse error in router:", e instanceof Error ? e.message : e);
             response = "Cloud response parse error.";
             executedOn = `cloud (${cloud_provider}, parse error)`;
           }

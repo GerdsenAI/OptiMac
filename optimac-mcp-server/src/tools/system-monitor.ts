@@ -40,7 +40,7 @@ On a 16GB M4, watch for pressureLevel. "warning" means >75% used, "critical" mea
     async () => {
       const [vmStat, sysctl] = await Promise.all([
         runCommand("vm_stat"),
-        runCommand("sysctl", ["hw.memsize", "hw.pagesize"]),
+        runCommand("sysctl", ["hw.memsize", "hw.pagesize", "vm.swapusage"]),
       ]);
 
       if (vmStat.exitCode !== 0) {
@@ -236,7 +236,7 @@ This is the "dashboard" tool. Use it for a quick health check before making deci
     async () => {
       const [vmStat, sysctl, ps, df, pmset, uptime, hostname] = await Promise.all([
         runCommand("vm_stat"),
-        runCommand("sysctl", ["hw.memsize", "hw.pagesize"]),
+        runCommand("sysctl", ["hw.memsize", "hw.pagesize", "vm.swapusage"]),
         runCommand("ps", ["aux", "-m"]),
         runCommand("df", ["-k"]),
         runCommand("pmset", ["-g"]),

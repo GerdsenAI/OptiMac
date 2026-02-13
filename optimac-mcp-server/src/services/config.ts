@@ -132,7 +132,8 @@ export function loadConfig(): OptiMacConfig {
     const raw = readFileSync(CONFIG_FILE, "utf-8");
     const parsed = JSON.parse(raw) as Partial<OptiMacConfig>;
     return { ...DEFAULT_CONFIG, ...parsed };
-  } catch {
+  } catch (e) {
+    console.error("[optimac] config load failed, using defaults:", e instanceof Error ? e.message : e);
     return { ...DEFAULT_CONFIG };
   }
 }

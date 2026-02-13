@@ -1,5 +1,5 @@
 /**
- * Shell execution service with safety guards and timeout handling.
+ * Shell execution service with safety guards, timeout handling, and error classification.
  * All system commands flow through here for centralized error handling.
  */
 
@@ -12,15 +12,31 @@ const execAsync = promisify(exec);
 const DEFAULT_TIMEOUT = 15_000; // 15s for most commands
 const LONG_TIMEOUT = 60_000;   // 60s for heavy operations
 
+export type ErrorType = "TIMEOUT" | "NOT_FOUND" | "PERMISSION_DENIED" | "SIGNAL" | "GENERIC";
+
 export interface ShellResult {
   stdout: string;
   stderr: string;
   exitCode: number;
+  errorType?: ErrorType;
+}
+
+/** Classify error based on error object properties and stderr content */
+function classifyError(
+  err: { code?: number | string; killed?: boolean; signal?: string; stderr?: string },
+  stderr: string
+): ErrorType {
+  if (err.killed || err.signal === "SIGTERM") return "TIMEOUT";
+  if (err.code === "ENOENT" || stderr.includes("command not found") || stderr.includes("No such file")) return "NOT_FOUND";
+  if (stderr.includes("Permission denied") || stderr.includes("Operation not permitted") || err.code === "EACCES") return "PERMISSION_DENIED";
+  if (err.signal) return "SIGNAL";
+  return "GENERIC";
 }
 
 /**
  * Execute a command safely with timeout and error capture.
  * Uses execFile (no shell injection) when possible.
+ * Classifies errors for smarter handling in tool code.
  */
 export async function runCommand(
   command: string,
@@ -51,18 +67,24 @@ export async function runCommand(
     const { stdout, stderr } = await execFileAsync(command, args, execOpts);
     return { stdout: stdout.trim(), stderr: stderr.trim(), exitCode: 0 };
   } catch (error: unknown) {
-    const err = error as { stdout?: string; stderr?: string; code?: number | string; killed?: boolean };
-    if (err.killed) {
+    const err = error as { stdout?: string; stderr?: string; code?: number | string; killed?: boolean; signal?: string };
+    const stderr = err.stderr?.trim() ?? (error instanceof Error ? error.message : String(error));
+    const errorType = classifyError(err, stderr);
+
+    if (errorType === "TIMEOUT") {
       return {
         stdout: err.stdout?.trim() ?? "",
         stderr: `Command timed out after ${timeout}ms`,
         exitCode: 124,
+        errorType,
       };
     }
+
     return {
       stdout: err.stdout?.trim() ?? "",
-      stderr: err.stderr?.trim() ?? (error instanceof Error ? error.message : String(error)),
+      stderr,
       exitCode: typeof err.code === "number" ? err.code : 1,
+      errorType,
     };
   }
 }

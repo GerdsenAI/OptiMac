@@ -4,11 +4,13 @@
  *
  * Auto-detects running runtime, auto-reloads expired Ollama models,
  * handles all error cases, and returns structured results.
+ * Supports both blocking and streaming modes.
  */
 
 import { runCommand } from "./shell.js";
 import { loadConfig } from "./config.js";
 import { checkPort } from "./net.js";
+import { execFile, ChildProcess } from "node:child_process";
 
 export interface InferenceResult {
     response: string;
@@ -16,6 +18,7 @@ export interface InferenceResult {
     runtime: string;
     usage: { prompt_tokens?: number; completion_tokens?: number; total_tokens?: number };
     error?: string;
+    partial?: boolean; // true if response was cut short by timeout (streaming)
 }
 
 /**
@@ -29,6 +32,7 @@ export interface InferenceResult {
  * @param options.temperature - Sampling temperature (default 0.2)
  * @param options.runtime - Force a specific runtime instead of auto-detecting ("ollama" | "mlx" | "lmstudio")
  * @param options.timeout - Request timeout in ms (default 180000 = 3 min)
+ * @param options.stream - Use streaming mode (returns partial results on timeout)
  */
 export async function inferLocal(
     prompt: string,
@@ -38,10 +42,11 @@ export async function inferLocal(
         temperature?: number;
         runtime?: "ollama" | "mlx" | "lmstudio";
         timeout?: number;
+        stream?: boolean;
     } = {}
 ): Promise<InferenceResult> {
     const config = loadConfig();
-    const { system, maxTokens = 4096, temperature = 0.2, timeout = 180000 } = options;
+    const { system, maxTokens = 4096, temperature = 0.2, timeout = 180000, stream = false } = options;
 
     const portMap: Record<string, number> = {
         ollama: config.aiStackPorts.ollama,
@@ -142,9 +147,15 @@ export async function inferLocal(
         messages,
         temperature,
         max_tokens: maxTokens,
-        stream: false,
+        stream,
     });
 
+    // --- Streaming mode ---
+    if (stream) {
+        return inferStreaming(targetPort, requestBody, modelName, targetRuntime, timeout);
+    }
+
+    // --- Blocking mode ---
     const curlResult = await runCommand(
         "curl",
         [
@@ -184,3 +195,122 @@ export async function inferLocal(
         };
     }
 }
+
+/**
+ * Streaming inference via curl --no-buffer.
+ * Processes Server-Sent Events (SSE) from the OpenAI-compatible API,
+ * accumulates response content, and returns partial results on timeout.
+ */
+function inferStreaming(
+    port: number,
+    requestBody: string,
+    modelName: string,
+    runtime: string,
+    timeout: number
+): Promise<InferenceResult> {
+    return new Promise((resolve) => {
+        let content = "";
+        let model = modelName;
+        let usage: InferenceResult["usage"] = {};
+        let timedOut = false;
+        let proc: ChildProcess | null = null;
+
+        const timer = setTimeout(() => {
+            timedOut = true;
+            if (proc) proc.kill("SIGTERM");
+        }, timeout);
+
+        proc = execFile(
+            "curl",
+            [
+                "-s", "--no-buffer", "-X", "POST",
+                `http://127.0.0.1:${port}/v1/chat/completions`,
+                "-H", "Content-Type: application/json",
+                "-d", requestBody,
+            ],
+            { maxBuffer: 50 * 1024 * 1024 }, // 50 MB buffer for long generations
+            (error, stdout, stderr) => {
+                clearTimeout(timer);
+
+                if (error && !timedOut && !content) {
+                    resolve({
+                        response: "",
+                        model,
+                        runtime,
+                        usage,
+                        error: `STREAM_FAILED: ${stderr || error.message}`,
+                    });
+                    return;
+                }
+
+                // If we already accumulated content from events, use that
+                if (content) {
+                    resolve({
+                        response: content,
+                        model,
+                        runtime,
+                        usage,
+                        partial: timedOut,
+                    });
+                    return;
+                }
+
+                // Otherwise try to parse the full output (some servers batch)
+                try {
+                    const lines = stdout.split("\n");
+                    for (const line of lines) {
+                        if (!line.startsWith("data: ")) continue;
+                        const data = line.slice(6).trim();
+                        if (data === "[DONE]") continue;
+                        try {
+                            const chunk = JSON.parse(data);
+                            const delta = chunk.choices?.[0]?.delta?.content ?? "";
+                            content += delta;
+                            if (chunk.model) model = chunk.model;
+                            if (chunk.usage) usage = chunk.usage;
+                        } catch { /* skip malformed chunk */ }
+                    }
+                    resolve({
+                        response: content || "",
+                        model,
+                        runtime,
+                        usage,
+                        partial: timedOut,
+                    });
+                } catch {
+                    resolve({
+                        response: "",
+                        model,
+                        runtime,
+                        usage,
+                        error: `PARSE_ERROR: ${stdout.substring(0, 500)}`,
+                    });
+                }
+            }
+        );
+
+        // Real-time chunk processing from stdout
+        if (proc.stdout) {
+            let buffer = "";
+            proc.stdout.on("data", (chunk: Buffer) => {
+                buffer += chunk.toString();
+                const lines = buffer.split("\n");
+                buffer = lines.pop() ?? ""; // keep incomplete line in buffer
+
+                for (const line of lines) {
+                    if (!line.startsWith("data: ")) continue;
+                    const data = line.slice(6).trim();
+                    if (data === "[DONE]") continue;
+                    try {
+                        const parsed = JSON.parse(data);
+                        const delta = parsed.choices?.[0]?.delta?.content ?? "";
+                        content += delta;
+                        if (parsed.model) model = parsed.model;
+                        if (parsed.usage) usage = parsed.usage;
+                    } catch { /* skip malformed */ }
+                }
+            });
+        }
+    });
+}
+

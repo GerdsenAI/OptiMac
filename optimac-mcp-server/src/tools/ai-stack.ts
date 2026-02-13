@@ -53,7 +53,7 @@ This is the first thing to check when inference feels slow or unresponsive.`,
               })
             );
           }
-        } catch { /* API unavailable */ }
+        } catch (e) { console.error("[optimac] Ollama API unavailable:", e instanceof Error ? e.message : e); }
 
         // Get Ollama process RSS
         const ps = await runCommand("ps", ["aux"], { shell: true });
@@ -79,7 +79,7 @@ This is the first thing to check when inference feels slow or unresponsive.`,
               (m: { id: string }) => m.id
             );
           }
-        } catch { /* API unavailable */ }
+        } catch (e) { console.error("[optimac] LM Studio API unavailable:", e instanceof Error ? e.message : e); }
       }
 
       // MLX Server
@@ -96,7 +96,7 @@ This is the first thing to check when inference feels slow or unresponsive.`,
               (m: { id: string }) => m.id
             );
           }
-        } catch { /* API unavailable */ }
+        } catch (e) { console.error("[optimac] MLX API unavailable:", e instanceof Error ? e.message : e); }
       }
 
       // OpenClaw

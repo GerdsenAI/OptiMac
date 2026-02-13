@@ -85,11 +85,11 @@ function scanForModels(dir: string, maxDepth = 4, currentDepth = 0): Array<{ pat
             if (sizeMB >= MIN_MODEL_SIZE_MB) {
               results.push({ path: fullPath, sizeMB });
             }
-          } catch { /* permission denied, etc. */ }
+          } catch (e) { console.error(`[optimac] stat failed for ${fullPath}:`, e instanceof Error ? e.message : e); }
         }
       }
     }
-  } catch { /* directory not readable */ }
+  } catch (e) { console.error(`[optimac] directory not readable ${dir}:`, e instanceof Error ? e.message : e); }
 
   return results;
 }
@@ -372,7 +372,7 @@ Args:
               isError: true,
             };
           }
-        } catch { /* can't stat, proceed anyway */ }
+        } catch (e) { console.error(`[optimac] can't stat model:`, e instanceof Error ? e.message : e); }
       }
 
       // SERVE with selected runtime
@@ -587,7 +587,7 @@ Returns running models from Ollama (via ollama ps) and MLX (via port check + API
             const parsed = JSON.parse(modelsResult.stdout);
             models = (parsed.data ?? []).map((m: { id: string }) => m.id).join(", ");
           }
-        } catch { /* API unavailable */ }
+        } catch (e) { console.error("[optimac] MLX API unavailable:", e instanceof Error ? e.message : e); }
         running["mlx"] = {
           serverRunning: true,
           port: config.aiStackPorts.mlx,
@@ -610,7 +610,7 @@ Returns running models from Ollama (via ollama ps) and MLX (via port check + API
             const parsed = JSON.parse(modelsResult.stdout);
             models = (parsed.data ?? []).map((m: { id: string }) => m.id).join(", ");
           }
-        } catch { /* API unavailable */ }
+        } catch (e) { console.error("[optimac] LM Studio API unavailable:", e instanceof Error ? e.message : e); }
         running["lmstudio"] = {
           serverRunning: true,
           port: config.aiStackPorts.lmstudio,
