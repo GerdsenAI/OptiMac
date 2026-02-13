@@ -6,6 +6,7 @@
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z } from "zod";
 import { loadConfig, saveConfig, type OptiMacConfig } from "../services/config.js";
+import { runCommand } from "../services/shell.js";
 
 export function registerConfigTools(server: McpServer): void {
   // ---- GET CONFIG ----
@@ -295,28 +296,26 @@ Each preset builds on the previous. All are reversible with optimac_enable_servi
 
       const services = preset === "minimal" ? minimal
         : preset === "moderate" ? moderate
-        : aggressive;
+          : aggressive;
 
       const results: Record<string, string> = {};
 
-      for (const svc of services) {
-        const uid = await import("node:child_process")
-          .then((cp) => cp.execSync("id -u").toString().trim());
+      // Get UID once, outside the loop
+      const uidResult = await runCommand("id", ["-u"]);
+      const uid = uidResult.stdout.trim();
 
-        const result = await import("../services/shell.js")
-          .then((sh) => sh.runCommand(
-            "launchctl",
-            ["disable", `user/${uid}/${svc}`],
-            { shell: false }
-          ));
+      for (const svc of services) {
+        const result = await runCommand(
+          "launchctl",
+          ["disable", `user/${uid}/${svc}`],
+        );
 
         results[svc] = result.exitCode === 0 ? "disabled" : result.stderr;
       }
 
       // Also disable Spotlight for moderate+
       if (preset !== "minimal") {
-        const mdutil = await import("../services/shell.js")
-          .then((sh) => sh.runCommand("sudo", ["mdutil", "-a", "-i", "off"], { shell: true }));
+        const mdutil = await runCommand("sudo", ["mdutil", "-a", "-i", "off"], { shell: true });
         results["spotlight"] = mdutil.exitCode === 0 ? "disabled" : mdutil.stderr;
       }
 

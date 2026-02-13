@@ -1,0 +1,5 @@
+[flake8]
+max-line-length = 99
+extend-ignore = W291,W293
+per-file-ignores =
+    gerdsenai_optimac_improved.py:E501

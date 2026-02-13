@@ -4,39 +4,15 @@
 # System monitoring
 psutil>=5.9.0
 
-# Standard library modules (included with Python)
-# tkinter - GUI framework (included)
-# subprocess - command execution (included)
-# threading - background processing (included)
-# queue - thread communication (included)
-# multiprocessing - stress testing (included)
-# json - configuration (included)
-# re - pattern matching (included)
-# time - timing operations (included)
-# datetime - timestamps (included)
-# pathlib - file paths (included)
-# platform - system detection (included)
-# math - mathematical operations (included)
-# random - stress test data (included)
-# os - system interface (included)
-# sys - system interface (included)
+# Optional dependencies (install separately if needed)
+# netifaces>=0.11.0      # Advanced networking
+# colorama>=0.4.6        # Terminal output formatting
+# pyfiglet>=0.8.0        # ASCII art banner generation
 
-# Optional dependencies for enhanced features
-# These can be installed separately if needed:
-
-# For more advanced networking (optional)
-# netifaces>=0.11.0
-
-# For better terminal output formatting (optional)  
-# colorama>=0.4.6
-
-# For ASCII art banner generation (optional)
-# pyfiglet>=0.8.0
-
-# Development dependencies (optional)
+# Development dependencies
 # pytest>=7.0.0
 # black>=22.0.0
 # flake8>=5.0.0
 
-# Platform requirement: macOS only
-# Python requirement: 3.8+
+# Platform: macOS only | Python: 3.8+
+# Note: tkinter must be available (included with most Python installations)

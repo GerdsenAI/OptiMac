@@ -50,9 +50,6 @@ export function parseVmStat(vmStatOutput: string, sysctl: string): MemoryStats {
   const fileBacked = (vals["file_backed_pages"] ?? 0) * 4096;
   const anonymous = (vals["anonymous_pages"] ?? 0) * 4096;
 
-  const swapMatch = vmStatOutput.match(/Swapins:\s*(\d+)/);
-  const swapUsed = vals["swapins"] ?? 0;
-
   const usedBytes = active + wired + compressed;
   const freeBytes = totalBytes - usedBytes;
 
@@ -73,7 +70,7 @@ export function parseVmStat(vmStatOutput: string, sysctl: string): MemoryStats {
     purgeablePages: vals["pages_purgeable"] ?? 0,
     fileBacked: Math.round(fileBacked / (1024 * 1024)),
     anonymous: Math.round(anonymous / (1024 * 1024)),
-    swapUsedMB: swapUsed,
+    swapUsedMB: vals["swapins"] ?? 0,
     totalPhysicalMB: totalMB,
     usedMB: Math.round(usedBytes / (1024 * 1024)),
     freeMB: Math.round(freeBytes / (1024 * 1024)),

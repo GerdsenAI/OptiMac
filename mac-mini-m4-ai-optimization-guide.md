@@ -11,7 +11,7 @@ Turn a Mac Mini M4 or M4 Pro into a dedicated, always-on, bloat-free AI inferenc
 ### M4 vs M4 Pro for AI Inference
 
 | Spec | M4 (base) | M4 Pro |
-|------|-----------|--------|
+| ------ | --------- | ------ |
 | Memory bandwidth | 120 GB/s | 273 GB/s |
 | Max unified memory | 32 GB | 64 GB |
 | GPU cores | 10 | 20 |
@@ -48,6 +48,7 @@ Quantization is the single biggest lever for fitting larger models into limited 
 **Recommended approach**: Use 4-bit quantization for the bulk of model weights, but keep embedding and final projection layers at 6-bit or 8-bit precision. These layers are more sensitive to quantization noise, so mixed precision here gives you the best quality-per-byte tradeoff.
 
 Practical sizes after 4-bit quantization:
+
 - 7-8B model: ~4-5 GB RAM
 - 13-14B model: ~7-8 GB RAM
 - 32B model: ~18-20 GB RAM
@@ -58,15 +59,18 @@ Practical sizes after 4-bit quantization:
 1. **Always use MLX-format models** from Hugging Face (look for `mlx-community` repos). These are pre-converted and optimized.
 2. **Keep MLX updated.** Apple ships performance improvements frequently -- a 5-10% gain per update is common.
 3. **Use `mlx-lm` CLI** for direct inference without GUI overhead:
+
    ```bash
    pip install mlx-lm
    mlx_lm.generate --model mlx-community/Qwen2.5-32B-Instruct-4bit --prompt "Hello"
    ```
 4. **Serve via `mlx-lm.server`** for OpenAI-compatible API endpoint:
+
    ```bash
    mlx_lm.server --model mlx-community/Qwen2.5-32B-Instruct-4bit --port 8080
    ```
 5. **Monitor with `powermetrics`**:
+
    ```bash
    sudo powermetrics --samplers gpu_power,cpu_power -i 1000
    ```
@@ -74,6 +78,7 @@ Practical sizes after 4-bit quantization:
 ### Thermal Management
 
 The Mac Mini M4 is passively/actively cooled and handles sustained loads well, but for continuous 24/7 inference:
+
 - Ensure adequate airflow around the device (do not stack or enclose)
 - Vertical orientation exposes more surface area
 - Consider an external USB fan pad for heavy sustained batch inference
@@ -88,6 +93,7 @@ The Mac Mini M4 is passively/actively cooled and handles sustained loads well, b
 LM Studio provides a polished GUI for downloading, managing, and serving local models with native MLX support.
 
 **Setup:**
+
 1. Download from [lmstudio.ai](https://lmstudio.ai)
 2. In settings, enable MLX backend for Apple Silicon acceleration
 3. Download models in MLX format for best M4 performance
@@ -95,6 +101,7 @@ LM Studio provides a polished GUI for downloading, managing, and serving local m
 5. Set context length to 32K minimum (bump to 128K for large projects if RAM allows)
 
 **Connecting to Claude Code:**
+
 ```bash
 export ANTHROPIC_BASE_URL=http://localhost:1234
 export ANTHROPIC_AUTH_TOKEN=lmstudio
@@ -140,12 +147,14 @@ This lets Claude Code, or any OpenAI-compatible client, route through OpenRouter
 OpenClaw is the most-hyped open-source AI agent of 2026 (147K+ GitHub stars). It connects LLMs to messaging apps (WhatsApp, Telegram, Discord, Slack, Signal, iMessage) with persistent memory, proactive notifications, and real action capabilities (file search, shell commands, Python scripts, calendar management, smart home control).
 
 **Setup:**
+
 1. Requires Node.js 22+, macOS 14+
 2. One-liner install from [openclaw.ai](https://openclaw.ai)
 3. Interactive TUI walks through configuration
 4. QuickStart mode configures safe defaults
 
 **Cost structure:**
+
 - OpenClaw itself: free (MIT license)
 - API tokens: ~$10-30/month light, $30-70 moderate, $70-150 heavy
 - Can use Claude Pro/Max subscription via CLI token instead of per-token billing
@@ -157,6 +166,7 @@ OpenClaw is the most-hyped open-source AI agent of 2026 (147K+ GitHub stars). It
 Claude Code is Anthropic's official CLI for agentic coding. It can connect to local models as a fallback when API quota runs out.
 
 **Local model setup:**
+
 ```bash
 # Via LM Studio
 export ANTHROPIC_BASE_URL=http://localhost:1234
@@ -290,7 +300,7 @@ pmset -g
 ```
 
 | Setting | Value | What It Does |
-|---------|-------|--------------|
+| ------- | ----- | ------------ |
 | sleep 0 | Disable | Never sleep the system |
 | displaysleep 0 | Disable | Never sleep the display |
 | disksleep 0 | Disable | Never spin down disks |
@@ -487,7 +497,7 @@ Works with any MCP-compatible client (Claude Desktop, Cursor, etc.). Provides br
 
 For the "IQ 3000 admin on the fly 24/7/365" use case, you would want a custom MCP server that combines:
 
-```
+```text
 Tools to expose via MCP:
 - purge_memory()       -> runs `sudo purge`
 - flush_dns()          -> runs DNS flush commands
@@ -558,11 +568,13 @@ System Settings > General > Sharing > Screen Sharing > On
 ## Part 9: Complete Setup Checklist
 
 ### Initial Hardware Setup
+
 - [ ] Choose RAM tier (32GB minimum recommended, 48-64GB ideal for M4 Pro)
 - [ ] HDMI dummy plug installed
 - [ ] Ethernet connected (not Wi-Fi, for lower latency and reliability)
 
 ### macOS Configuration
+
 - [ ] pmset configured (sleep 0, autorestart 1, womp 1, etc.)
 - [ ] Caffeinate daemon installed
 - [ ] FileVault disabled
@@ -579,6 +591,7 @@ System Settings > General > Sharing > Screen Sharing > On
 - [ ] Tailscale installed (optional, for remote access)
 
 ### AI Software Stack
+
 - [ ] Ollama installed and configured as LaunchDaemon
 - [ ] LM Studio installed (optional, for GUI model management)
 - [ ] MLX and mlx-lm installed (`pip install mlx mlx-lm`)
@@ -588,6 +601,7 @@ System Settings > General > Sharing > Screen Sharing > On
 - [ ] OpenRouter API key configured (optional, for cloud model access)
 
 ### MCP Layer
+
 - [ ] macos-automator-mcp installed
 - [ ] Accessibility permissions granted
 - [ ] Automation permissions granted
@@ -595,6 +609,7 @@ System Settings > General > Sharing > Screen Sharing > On
 - [ ] MCP servers connected to Claude Desktop / OpenClaw
 
 ### Maintenance
+
 - [ ] ai-server-maintain.sh installed and scheduled
 - [ ] kill-stale-processes.sh installed
 - [ ] Monitoring configured (iStat Menus or custom)
@@ -607,7 +622,7 @@ System Settings > General > Sharing > Screen Sharing > On
 ### M4 (base, 32GB RAM)
 
 | Model | Quantization | Tokens/sec | RAM Usage |
-|-------|-------------|------------|-----------|
+| ----- | ----------- | ---------- | --------- |
 | Llama 3.1 8B | Q4 | 18-25 | ~5 GB |
 | Qwen 2.5 14B | Q4 | 10-15 | ~8 GB |
 | DeepSeek R1 32B | Q4 | 5-8 | ~20 GB |
@@ -615,7 +630,7 @@ System Settings > General > Sharing > Screen Sharing > On
 ### M4 Pro (48-64GB RAM)
 
 | Model | Quantization | Tokens/sec | RAM Usage |
-|-------|-------------|------------|-----------|
+| ----- | ----------- | ---------- | --------- |
 | Llama 3.1 8B | Q4 | 35-45 | ~5 GB |
 | Qwen 2.5 14B | Q4 | 22-30 | ~8 GB |
 | DeepSeek R1 32B | Q4 | 11-14 | ~20 GB |

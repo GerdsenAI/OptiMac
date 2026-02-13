@@ -44,7 +44,7 @@ claude mcp add optimac node /path/to/optimac-mcp-server/dist/index.js
 | `optimac_power_settings` | Current pmset configuration |
 | `optimac_system_overview` | Full dashboard in one call |
 
-### System Control (11)
+### System Control (13)
 | Tool | Description |
 |------|------------|
 | `optimac_purge_memory` | Force-purge inactive pages |

@@ -2,6 +2,8 @@
 
 This comprehensive guide provides solutions for developing an enhanced performance optimization script for Apple Silicon Macs (M1-M4), addressing accurate hardware monitoring, network statistics, stress testing without external dependencies, and a retro terminal aesthetic.
 
+> **NOTE:** This document is a **development reference guide** containing exploratory code snippets and architectural research. The shipped application (`gerdsenai_optimac_improved.py`) is a single-file, 5-tab GUI built on tkinter that requires only `psutil` as an external dependency. It includes two utility classes (`AIStackManager` for managing Ollama/LM Studio/MLX services and `ConfigManager` for persistent user settings at `~/.optimac/config.json`), per-tab terminal widgets, configurable stress tests, and a maintenance cycle. Code examples below showing packages like `numpy`, `pyfiglet`, or modular package structures (e.g., `mac_silicon_monitor.gui`) were explored during development but are **not part of the final implementation**. GPU core counts in the code differ slightly from values listed here; refer to the source code for authoritative values.
+
 ## NPU/GPU monitoring reveals fundamental limitations
 
 Apple Silicon's Neural Engine monitoring faces significant constraints due to Apple's architectural decisions. **The Neural Engine lacks public APIs for direct utilization monitoring**, forcing developers to rely on power consumption estimation through the `powermetrics` utility. This limitation affects all Apple Silicon models from M1 through M4.

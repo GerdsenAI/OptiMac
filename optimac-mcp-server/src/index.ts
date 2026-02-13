@@ -9,9 +9,9 @@
  * Transport: stdio (launched as subprocess by MCP client)
  * Config: ~/.optimac/config.json
  *
- * 30 tools across 5 domains:
+ * 32 tools across 5 domains:
  *   - System Monitoring (6): memory, processes, disk, thermal, power, overview
- *   - System Control (11): purge, DNS, routes, power, spotlight, caches, services, UI, network
+ *   - System Control (13): purge, DNS, routes, power, power-optimize, spotlight, caches, set-dns, services, enable-service, network-reset, reduce-ui, kill-process
  *   - AI Stack (7): status, ollama start/stop/models, mlx start/stop, smart swap
  *   - Memory Pressure (2): pressure check with tiered response, full maintenance cycle
  *   - Configuration (6): get/set config, protect/unprotect processes, ports, debloat presets

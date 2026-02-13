@@ -90,7 +90,7 @@ Use this to identify memory hogs before running optimac_kill_process.`,
     },
     async ({ sort_by, limit, show_protected }) => {
       const sortFlag = sort_by === "cpu" ? "-r" : "-m";
-      const result = await runCommand("ps", ["aux", "-r"]);
+      const result = await runCommand("ps", ["aux", sortFlag]);
 
       if (result.exitCode !== 0) {
         return { content: [{ type: "text", text: `Error: ${result.stderr}` }], isError: true };
