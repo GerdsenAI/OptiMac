@@ -2,6 +2,23 @@
 
 System-level AI inference optimizer for Mac Mini M4 / M4 Pro. Controls system resources, manages AI inference stacks (Ollama, LM Studio, MLX) via MCP, and provides intelligent model management with RAM safety checks -- giving Claude full admin control over your machine's performance.
 
+## Table of Contents
+
+- [Quick Start](#quick-start)
+- [Add to Claude Desktop](#add-to-claude-desktop)
+- [Add to Claude Code](#add-to-claude-code)
+- [Tools (40 total)](#tools-40-total)
+  - [System Monitoring (6)](#system-monitoring-6)
+  - [System Control (13)](#system-control-13)
+  - [AI Stack Management (7)](#ai-stack-management-7)
+  - [Model Management (8)](#model-management-8----new)
+  - [Memory Pressure (2)](#memory-pressure-2)
+  - [Configuration (6)](#configuration-6)
+- [RAM Headroom Policy](#ram-headroom-policy)
+- [Configuration](#configuration)
+- [Requirements](#requirements)
+- [License](#license)
+
 ## Quick Start
 
 ```bash
