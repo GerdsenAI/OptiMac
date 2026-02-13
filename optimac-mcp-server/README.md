@@ -1,6 +1,6 @@
 # OptiMac MCP Server
 
-System-level AI inference optimizer for Mac Mini M4 / M4 Pro. Controls memory, power, network, processes, and AI stacks (Ollama, LM Studio, MLX) via MCP -- giving Claude full admin control over your machine's performance.
+System-level AI inference optimizer for Mac Mini M4 / M4 Pro. Controls system resources, manages AI inference stacks (Ollama, LM Studio, MLX) via MCP, and provides intelligent model management with RAM safety checks -- giving Claude full admin control over your machine's performance.
 
 ## Quick Start
 
@@ -32,7 +32,9 @@ Edit `~/Library/Application Support/Claude/claude_desktop_config.json`:
 claude mcp add optimac node /path/to/optimac-mcp-server/dist/index.js
 ```
 
-## Tools (32 total)
+## Tools (39 total)
+
+For detailed documentation of every tool with parameters, return values, and examples, see [MCP_COMMANDS.md](../MCP_COMMANDS.md).
 
 ### System Monitoring (6)
 | Tool | Description |
@@ -72,6 +74,18 @@ claude mcp add optimac node /path/to/optimac-mcp-server/dist/index.js
 | `optimac_mlx_stop` | Stop MLX-LM server |
 | `optimac_swap_model` | Smart model swap (stop, purge, restart) |
 
+### Model Management (7) -- NEW
+| Tool | Description |
+|------|------------|
+| `optimac_models_available` | Browse local models filtered by RAM fit |
+| `optimac_ollama_available` | Ollama models filtered by RAM fit |
+| `optimac_model_serve` | Load and serve a model with RAM safety check |
+| `optimac_model_unload` | Unload model(s) to free RAM |
+| `optimac_models_running` | Show currently loaded models across all runtimes |
+| `optimac_model_dir_set` | Set model base directory |
+| `optimac_model_dir_get` | Get model base directory |
+| `optimac_model_ram_check` | Check if a model fits in available RAM |
+
 ### Memory Pressure (2)
 | Tool | Description |
 |------|------------|
@@ -88,17 +102,23 @@ claude mcp add optimac node /path/to/optimac-mcp-server/dist/index.js
 | `optimac_config_set_port` | Set AI service port |
 | `optimac_debloat` | Apply debloat preset (minimal/moderate/aggressive) |
 
+## RAM Headroom Policy
+
+Model management tools enforce a 20% headroom policy to prevent swap thrashing. A 7GB model requires 8.4GB of available RAM. Use `optimac_model_ram_check` to verify before loading, or `optimac_models_available` to see only models that fit.
+
 ## Configuration
 
 Config file: `~/.optimac/config.json`
 
-Created automatically on first run with sensible defaults for a 16GB M4.
+Created automatically on first run with sensible defaults. Shared between MCP server and GUI.
 
 Key settings:
 - `memoryWarningThreshold`: 0.75 (trigger warning at 75% used)
 - `memoryCriticalThreshold`: 0.90 (trigger auto-kill at 90% used)
 - `autoKillAtCritical`: true (auto-kill non-protected processes)
 - `protectedProcesses`: ollama, lmstudio, python, node, claude, sshd, etc.
+- `modelBaseDir`: base directory for model files (set via GUI or `optimac_model_dir_set`)
+- `aiStackPorts`: ports for ollama (11434), lmstudio (1234), mlx (8080)
 
 ## Requirements
 
