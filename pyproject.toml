@@ -1,0 +1,27 @@
+[build-system]
+requires = ["setuptools>=65.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "gerdsenai-optimac"
+version = "2.5.0"
+description = "GerdsenAI OptiMac: macOS menu bar app for Apple Silicon optimization"
+requires-python = ">=3.9"
+license = "MIT"
+authors = [
+    { name = "GerdsenAI" },
+]
+dependencies = [
+    "psutil>=5.9.0",
+    "rumps>=0.4.0",
+    "Pillow>=9.0.0",
+]
+
+[project.urls]
+Homepage = "https://github.com/gerdsenai/optimac"
+
+[project.scripts]
+optimac-gui = "gerdsenai_optimac.gui.menu_app:main"
+
+[tool.setuptools.packages.find]
+include = ["gerdsenai_optimac*"]

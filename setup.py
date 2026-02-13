@@ -1,14 +1,13 @@
 """
-GerdsenAI OptiMac - Setup for py2app packaging
+GerdsenAI OptiMac - py2app packaging configuration
 
 Build .app bundle:
     python setup.py py2app
 
-Development mode:
-    pip install -e .
+For package installation, see pyproject.toml.
 """
 
-from setuptools import setup, find_packages
+from setuptools import setup
 
 APP = ["gerdsenai_optimac/gui/menu_app.py"]
 
@@ -36,23 +35,6 @@ OPTIONS = {
 }
 
 setup(
-    name="gerdsenai-optimac",
-    version="2.5.0",
-    description="GerdsenAI OptiMac: macOS menu bar app for Apple Silicon optimization",
-    author="GerdsenAI",
-    url="https://github.com/gerdsenai/optimac",
-    packages=find_packages(),
-    python_requires=">=3.9",
-    install_requires=[
-        "psutil>=5.9.0",
-        "rumps>=0.4.0",
-        "Pillow>=9.0.0",
-    ],
-    entry_points={
-        "console_scripts": [
-            "optimac-gui=gerdsenai_optimac.gui.menu_app:main",
-        ],
-    },
     app=APP,
     data_files=DATA_FILES,
     options={"py2app": OPTIONS},
