@@ -10,5 +10,12 @@ rumps>=0.4.0
 # Icon generation (optional -- degrades gracefully)
 Pillow>=9.0.0
 
+# Native macOS UI (template icons, AppKit access)
+pyobjc-framework-Cocoa>=9.0
+
 # Platform: macOS only | Python: 3.9+
 # Note: tkinter must be available (included with most Python installations)
+
+# MCP Integration
+mcp>=1.1.0
+aiohttp>=3.9.0

@@ -19,7 +19,9 @@ def run_command(command, timeout=30):
     try:
         result = subprocess.run(
             command if isinstance(command, list) else command.split(),
-            capture_output=True, text=True, timeout=timeout,
+            capture_output=True,
+            text=True,
+            timeout=timeout,
         )
         output = result.stdout.strip()
         if result.returncode != 0 and result.stderr:
@@ -36,6 +38,7 @@ def run_command_threaded(command, callback=None, timeout=30):
     Execute a shell command in a background thread.
     Calls callback(success, output) when done.
     """
+
     def _worker():
         success, output = run_command(command, timeout=timeout)
         if callback:
@@ -49,3 +52,32 @@ def run_command_threaded(command, callback=None, timeout=30):
 def timestamp():
     """Return formatted timestamp string."""
     return datetime.now().strftime("[%H:%M:%S]")
+
+
+def run_command_with_output(command, widget=None, callback=None, timeout=30):
+    """
+    Execute a command and pipe output to a terminal widget.
+
+    If widget is provided and visible, output streams there in real-time.
+    The callback is always invoked on completion regardless of widget state.
+
+    Args:
+        command: Shell command string or list.
+        widget: Optional TerminalWidget instance.
+        callback: Optional callback(success, output) for completion.
+        timeout: Command timeout in seconds.
+    """
+    if widget and widget.is_visible():
+        cmd_str = command if isinstance(command, str) else " ".join(command)
+        widget.run_shell(cmd_str)
+        # Still invoke callback — run_shell is async, so call with
+        # a threaded wrapper that waits for the command result
+        if callback:
+
+            def _wait_and_callback():
+                success, output = run_command(command, timeout=timeout)
+                callback(success, output)
+
+            threading.Thread(target=_wait_and_callback, daemon=True).start()
+    else:
+        run_command_threaded(command, callback=callback, timeout=timeout)
