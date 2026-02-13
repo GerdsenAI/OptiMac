@@ -1,5 +1,6 @@
 #!/bin/bash
 # Build GerdsenAI OptiMac .app bundle and .dmg installer
+# Uses PyInstaller + hdiutil
 # Usage: bash scripts/build.sh
 set -e
 
@@ -18,32 +19,75 @@ PROJECT_DIR="$(dirname "$SCRIPT_DIR")"
 cd "$PROJECT_DIR"
 
 # Clean previous builds
-echo "[1/5] Cleaning previous builds..."
-rm -rf build dist "${DMG_NAME}" 2>/dev/null || true
+echo "[1/6] Cleaning previous builds..."
+rm -rf build dist "${DMG_NAME}" *.spec 2>/dev/null || true
 
-# Check dependencies
-echo "[2/5] Checking dependencies..."
-python3 -c "import rumps" 2>/dev/null || { echo "Error: 'rumps' not installed. Run: pip install rumps"; exit 1; }
-python3 -c "import psutil" 2>/dev/null || { echo "Error: 'psutil' not installed. Run: pip install psutil"; exit 1; }
-python3 -c "import py2app" 2>/dev/null || { echo "Error: 'py2app' not installed. Run: pip install py2app"; exit 1; }
+# Set up virtual environment
+echo "[2/6] Setting up build environment..."
+if [ ! -d ".venv" ]; then
+    python3 -m venv .venv
+fi
+source .venv/bin/activate
 
-# Build .app bundle
-echo "[3/5] Building .app bundle..."
-python3 setup.py py2app --dist-dir "$BUILD_DIR" 2>&1 | tail -5
+# Check / install dependencies
+echo "[3/6] Checking dependencies..."
+pip install -q pyinstaller rumps psutil Pillow pyobjc-core pyobjc-framework-Cocoa 2>&1 | tail -2
+
+# Generate .icns if missing
+echo "[4/6] Preparing icon..."
+if [ ! -f "_logo/OptiMac.icns" ]; then
+    mkdir -p _logo/OptiMac.iconset
+    python3 -c "
+from PIL import Image
+img = Image.open('_logo/GerdsenAI_Neural_G_Transparent.png').convert('RGBA')
+for s in [16, 32, 64, 128, 256, 512]:
+    img.resize((s, s), Image.Resampling.LANCZOS).save(f'_logo/OptiMac.iconset/icon_{s}x{s}.png')
+    if s <= 256:
+        img.resize((s*2, s*2), Image.Resampling.LANCZOS).save(f'_logo/OptiMac.iconset/icon_{s}x{s}@2x.png')
+"
+    iconutil -c icns _logo/OptiMac.iconset -o _logo/OptiMac.icns
+    rm -rf _logo/OptiMac.iconset
+fi
+
+# Build .app bundle with PyInstaller
+echo "[5/6] Building .app bundle..."
+pyinstaller \
+    --name "${APP_NAME}" \
+    --icon _logo/OptiMac.icns \
+    --windowed \
+    --onedir \
+    --add-data "_logo/GerdsenAI_Neural_G_Transparent.png:_logo" \
+    --hidden-import rumps \
+    --hidden-import psutil \
+    --hidden-import PIL \
+    --hidden-import gerdsenai_optimac \
+    --hidden-import gerdsenai_optimac.gui \
+    --hidden-import gerdsenai_optimac.gui.monitors \
+    --hidden-import gerdsenai_optimac.gui.commands \
+    --hidden-import gerdsenai_optimac.gui.themes \
+    --osx-bundle-identifier com.gerdsenai.optimac \
+    --noconfirm \
+    gerdsenai_optimac/gui/menu_app.py 2>&1 | tail -5
 
 if [ ! -d "${BUILD_DIR}/${APP_NAME}.app" ]; then
     echo "Error: .app bundle not created"
     exit 1
 fi
 
+# Patch Info.plist for menu bar mode (no Dock icon)
+/usr/libexec/PlistBuddy -c "Add :LSUIElement bool true" "${BUILD_DIR}/${APP_NAME}.app/Contents/Info.plist" 2>/dev/null || true
+
+# Re-sign
+codesign --force --deep --sign - "${BUILD_DIR}/${APP_NAME}.app"
+
 echo "  -> ${BUILD_DIR}/${APP_NAME}.app"
 
 # Create DMG
-echo "[4/5] Creating DMG installer..."
+echo "[6/6] Creating DMG installer..."
 if command -v create-dmg &>/dev/null; then
     create-dmg \
         --volname "${APP_NAME}" \
-        --volicon "_logo/GerdsenAI_Neural_G_Transparent.png" \
+        --volicon "_logo/OptiMac.icns" \
         --window-pos 200 120 \
         --window-size 600 400 \
         --icon-size 100 \
@@ -52,15 +96,13 @@ if command -v create-dmg &>/dev/null; then
         --no-internet-enable \
         "${DMG_NAME}" \
         "${BUILD_DIR}/" 2>&1 | tail -3
-elif command -v hdiutil &>/dev/null; then
+else
     # Fallback: simple DMG via hdiutil
     TMP_DMG="/tmp/optimac_tmp.dmg"
-    hdiutil create -srcfolder "${BUILD_DIR}" -volname "${APP_NAME}" -fs HFS+ -format UDRW "${TMP_DMG}" -ov
-    hdiutil convert "${TMP_DMG}" -format UDZO -o "${DMG_NAME}"
+    rm -f "$TMP_DMG"
+    hdiutil create -srcfolder "${BUILD_DIR}" -volname "${APP_NAME}" -fs HFS+ -format UDRW "${TMP_DMG}" -ov 2>&1 | tail -2
+    hdiutil convert "${TMP_DMG}" -format UDZO -o "${DMG_NAME}" 2>&1 | tail -2
     rm -f "${TMP_DMG}"
-else
-    echo "  Warning: No DMG tool found. Install 'create-dmg' for a polished DMG."
-    echo "  brew install create-dmg"
 fi
 
 if [ -f "${DMG_NAME}" ]; then
@@ -69,7 +111,7 @@ fi
 
 # Summary
 echo ""
-echo "[5/5] Build complete!"
+echo "Build complete!"
 echo "========================================="
 echo " Outputs:"
 echo "   .app: ${BUILD_DIR}/${APP_NAME}.app"
