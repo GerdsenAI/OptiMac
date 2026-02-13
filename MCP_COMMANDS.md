@@ -1,6 +1,6 @@
 # OptiMac MCP Server - Command Reference
 
-Version 1.3.0 | 55 tools across 8 domains
+Version 2.5.0 | 60 tools across 9 domains
 
 All tools are accessible via Claude Desktop or Claude Code when the OptiMac MCP server is configured. Each tool returns structured JSON responses.
 
@@ -10,10 +10,11 @@ All tools are accessible via Claude Desktop or Claude Code when the OptiMac MCP 
 2. System Control (13 tools)
 3. AI Stack Management (7 tools)
 4. Model Management (9 tools)
-5. Model Tasks (8 tools)
-6. Memory Pressure (2 tools)
-7. Configuration (6 tools)
-8. Autonomy (4 tools)
+5. Model Tasks (9 tools)
+6. Edge-to-Edge (4 tools)
+7. Memory Pressure (2 tools)
+8. Configuration (6 tools)
+9. Autonomy (4 tools)
 
 ---
 
@@ -513,7 +514,7 @@ Automatically detects which runtime has a model loaded. If multiple are running,
 
 ## 5. Model Tasks
 
-Bidirectional AI bridge tools. Local ↔ cloud as equal peers: local models handle privacy-sensitive and latency-critical tasks, cloud models handle complex reasoning and large-context work. The MCP server bridges both directions.
+Three-tier AI bridge tools. Local, edge, and cloud as equal peers: local models handle privacy-sensitive and latency-critical tasks, edge endpoints handle cross-runtime and LAN delegation, cloud models handle complex reasoning and large-context work.
 
 ### optimac_model_task
 
@@ -618,24 +619,109 @@ Escalate a task to a cloud AI provider (OpenAI, Anthropic, Google) when local mo
 
 ---
 
-### optimac_model_route
+### optimac_edge_escalate
 
-Smart router: sends a task to the local model first, evaluates response quality, and automatically escalates to cloud if the response is insufficient. Implements the bidirectional 50/50 philosophy.
+Edge-to-Edge bridge: send a task to another inference server on the local network or same machine. Targets a specific configured edge endpoint by name.
 
 **Parameters:**
 
-- `prompt` (string): The task to route
-- `files` (string[], optional): Files to include as context
-- `cloud_provider` (string, optional): Fallback cloud provider (default: openai)
-- `output_file` (string, optional): Write result to file
+- `prompt` (string): Task to send to edge endpoint
+- `edge_endpoint` (string): Name of configured edge endpoint
+- `system` (string, optional): System prompt
+- `files` (string[], optional): File paths to include as context
+- `max_tokens` (number, optional): Max tokens for response (default: 4096)
 
-**Returns:** Response with routing metadata: where it was executed, whether it was escalated, quality assessment
+**Returns:** Edge model response with endpoint info, latency, and model used
 
-**Example use:** "Route this task to the best available model"
+**Example use:** "Send this code review task to the nvidia-vllm edge endpoint"
 
 ---
 
-## 6. Memory Pressure
+### optimac_model_route
+
+Three-tier smart router: tries local first, then edge endpoints sorted by priority, then cloud. Evaluates response quality at each tier and escalates if insufficient.
+
+**Parameters:**
+
+- `task` (string): The task to route
+- `files` (string[], optional): Files to include as context
+- `prefer` (string, optional): "local", "edge", "cloud", or "auto" (default: auto)
+- `sensitive` (boolean, optional): If true, never escalate to cloud (default: false)
+- `output_path` (string, optional): Write result to file
+- `cloud_provider` (string, optional): Fallback cloud provider (default: openrouter)
+- `edge_endpoint` (string, optional): Target a specific edge endpoint
+
+**Returns:** Response with routing metadata: which tier executed it, whether it was escalated, quality assessment
+
+**Example use:** "Route this task to the best available model" / "Run this on the edge tier only"
+
+---
+
+## 6. Edge-to-Edge
+
+Manage remote inference endpoints on the local network or same machine. Supports Ollama (remote), MLX, LM Studio, vLLM, AnythingLLM, or any OpenAI-compatible server.
+
+### optimac_edge_add
+
+Register a new edge inference endpoint for Edge-to-Edge routing.
+
+**Parameters:**
+
+- `name` (string): Unique identifier (alphanumeric, hyphens, underscores)
+- `url` (string): Base URL of the endpoint (e.g., "http://192.168.1.50:11434")
+- `runtime_type` (string, optional): "ollama", "mlx", "lmstudio", "vllm", "anythingllm", or "openai-compatible" (default: openai-compatible)
+- `api_key` (string, optional): Authentication key
+- `default_model` (string, optional): Model to request (auto-detected if omitted)
+- `priority` (number, optional): Routing priority 1-100, lower = tried first (default: 50)
+
+**Returns:** Endpoint config with connectivity probe result
+
+**Example use:** "Register my NVIDIA box running vLLM at 192.168.1.50:8000"
+
+---
+
+### optimac_edge_remove
+
+Remove a registered edge endpoint by name.
+
+**Parameters:**
+
+- `name` (string): Name of the endpoint to remove
+
+**Returns:** Confirmation with remaining endpoint count
+
+---
+
+### optimac_edge_list
+
+List all configured edge endpoints with live connectivity status.
+
+**Parameters:**
+
+- `check_connectivity` (boolean, optional): Probe each endpoint for live status (default: true)
+
+**Returns:** Array of endpoints with name, URL, runtime type, priority, reachability, latency, available models
+
+**Example use:** "Show me all my edge endpoints and whether they are online"
+
+---
+
+### optimac_edge_test
+
+Send a test prompt to a specific edge endpoint and measure response quality and latency.
+
+**Parameters:**
+
+- `name` (string): Name of the configured edge endpoint
+- `prompt` (string, optional): Custom test prompt (default: "Say hello in one sentence.")
+
+**Returns:** Test results including response, model used, latency, and pass/fail verdict
+
+**Example use:** "Test the nvidia-vllm endpoint to make sure it's working"
+
+---
+
+## 7. Memory Pressure
 
 Tiered memory management tools.
 
@@ -670,7 +756,7 @@ Run a complete maintenance cycle (8 steps): memory pressure check, purge memory,
 
 ---
 
-## 8. Autonomy
+## 9. Autonomy
 
 Background monitoring, audit logging, and system health tracking.
 
@@ -723,7 +809,7 @@ Read the most recent entries from the OptiMac audit log (~/.optimac/audit.jsonl)
 
 ---
 
-## 7. Configuration
+## 8. Configuration
 
 Manage OptiMac settings at ~/.optimac/config.json. Shared between MCP server and GUI.
 

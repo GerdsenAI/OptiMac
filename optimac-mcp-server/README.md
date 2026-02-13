@@ -1,20 +1,22 @@
 # OptiMac MCP Server
 
-Bidirectional AI inference optimizer for Mac Mini M4 / M4 Pro. Local and cloud AI as equal peers: controls system resources, manages AI inference stacks (Ollama, LM Studio, MLX), bridges local ↔ cloud inference via MCP, and provides intelligent model management with RAM safety checks.
+Three-tier AI inference optimizer for Mac Mini M4 / M4 Pro. Local, edge, and cloud AI as equal peers: controls system resources, manages AI inference stacks (Ollama, LM Studio, MLX), bridges local, edge (LAN), and cloud inference via MCP, and provides intelligent model management with RAM safety checks.
 
 ## Table of Contents
 
 - [Quick Start](#quick-start)
 - [Add to Claude Desktop](#add-to-claude-desktop)
 - [Add to Claude Code](#add-to-claude-code)
-- [Tools (55 total)](#tools-55-total)
+- [Tools (60 total)](#tools-60-total)
   - [System Monitoring (6)](#system-monitoring-6)
   - [System Control (13)](#system-control-13)
   - [AI Stack Management (7)](#ai-stack-management-7)
   - [Model Management (9)](#model-management-9)
-  - [Model Tasks (8)](#model-tasks-8)
+  - [Model Tasks (9)](#model-tasks-9)
+  - [Edge-to-Edge (4)](#edge-to-edge-4)
   - [Memory Pressure (2)](#memory-pressure-2)
   - [Configuration (6)](#configuration-6)
+  - [Autonomy (4)](#autonomy-4)
 - [Architecture](#architecture)
 - [RAM Headroom Policy](#ram-headroom-policy)
 - [Configuration](#configuration)
@@ -51,7 +53,7 @@ Edit `~/Library/Application Support/Claude/claude_desktop_config.json`:
 claude mcp add optimac node /path/to/optimac-mcp-server/dist/index.js
 ```
 
-## Tools (55 total)
+## Tools (60 total)
 
 For detailed documentation of every tool with parameters, return values, and examples, see [MCP_COMMANDS.md](../MCP_COMMANDS.md).
 
@@ -106,7 +108,7 @@ For detailed documentation of every tool with parameters, return values, and exa
 | `optimac_model_ram_check` | Check if a model fits in available RAM |
 | `optimac_model_chat` | Send a prompt to the loaded model |
 
-### Model Tasks (8)
+### Model Tasks (9)
 | Tool | Description |
 |------|------------|
 | `optimac_model_task` | Free-form local model task with file context |
@@ -115,8 +117,17 @@ For detailed documentation of every tool with parameters, return values, and exa
 | `optimac_model_edit` | Edit files with natural-language instructions |
 | `optimac_model_summarize` | Summarize files |
 | `optimac_model_commit` | Generate conventional commit messages |
-| `optimac_cloud_escalate` | Escalate to cloud AI (OpenAI/Anthropic/Google) |
-| `optimac_model_route` | Smart local→cloud router with quality gate |
+| `optimac_cloud_escalate` | Escalate to cloud AI (OpenRouter/Anthropic/OpenAI) |
+| `optimac_edge_escalate` | Escalate to edge endpoint on LAN |
+| `optimac_model_route` | Smart 3-tier router: local, edge, cloud with quality gate |
+
+### Edge-to-Edge (4)
+| Tool | Description |
+|------|------------|
+| `optimac_edge_add` | Register a LAN/network inference endpoint |
+| `optimac_edge_remove` | Remove an edge endpoint |
+| `optimac_edge_list` | List all endpoints with live connectivity status |
+| `optimac_edge_test` | Test inference on a specific endpoint |
 
 ### Memory Pressure (2)
 | Tool | Description |
@@ -134,16 +145,25 @@ For detailed documentation of every tool with parameters, return values, and exa
 | `optimac_config_set_port` | Set AI service port |
 | `optimac_debloat` | Apply debloat preset (minimal/moderate/aggressive) |
 
+### Autonomy (4)
+| Tool | Description |
+|------|------------|
+| `optimac_watchdog_start` | Start background watchdog for auto-maintenance |
+| `optimac_watchdog_stop` | Stop the watchdog |
+| `optimac_watchdog_status` | Check watchdog state |
+| `optimac_audit_log` | Read the audit log of past actions |
+
 ## Architecture
 
-OptiMac uses a **bidirectional 50/50 architecture** where local and cloud AI are equal peers:
+OptiMac uses a **three-tier architecture** where local, edge, and cloud AI are equal peers:
 
 - **Local models** handle privacy-sensitive tasks, latency-critical work, and offline operation
+- **Edge models** (LAN devices, other runtimes) handle cross-runtime delegation and distributed inference
 - **Cloud models** handle complex reasoning, large-context tasks, and specialized capabilities
-- **Smart routing** (`optimac_model_route`) tries local first, escalates to cloud when quality is insufficient
+- **Smart routing** (`optimac_model_route`) tries local first, then edge endpoints by priority, then cloud
 - **Streaming inference** support for both blocking and SSE modes
 
-All inference flows through a unified engine (`services/inference.ts`) with error classification and auto-recovery.
+All local inference flows through `services/inference.ts`, edge inference through `services/inference-edge.ts`, both with error classification and auto-recovery.
 
 ## RAM Headroom Policy
 
@@ -162,6 +182,8 @@ Key settings:
 - `protectedProcesses`: ollama, lmstudio, python, node, claude, sshd, etc.
 - `modelBaseDir`: base directory for model files (set via GUI or `optimac_model_dir_set`)
 - `aiStackPorts`: ports for ollama (11434), lmstudio (1234), mlx (8080)
+- `cloudEndpoints`: cloud API configs for OpenRouter, Anthropic, OpenAI (url, apiKey, defaultModel)
+- `edgeEndpoints`: LAN/network inference endpoints (url, runtimeType, priority, optional apiKey)
 
 ## Requirements
 

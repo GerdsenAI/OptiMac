@@ -1,6 +1,6 @@
 /**
  * Edge-to-Edge management tools.
- * Configure, test, and manage remote inference endpoints on the LAN.
+ * Configure, test, and manage remote inference endpoints on LANs.
  *
  * 4 tools:
  *   - optimac_edge_add: Add a new edge endpoint
@@ -59,12 +59,14 @@ Args:
       // Check if name already exists
       if (config.edgeEndpoints[name]) {
         return {
-          content: [{ type: "text", text: JSON.stringify({
-            warning: "ENDPOINT_EXISTS",
-            name,
-            message: `Edge endpoint "${name}" already exists. It will be updated.`,
-            previous: config.edgeEndpoints[name],
-          }, null, 2) }],
+          content: [{
+            type: "text", text: JSON.stringify({
+              warning: "ENDPOINT_EXISTS",
+              name,
+              message: `Edge endpoint "${name}" already exists. It will be updated.`,
+              previous: config.edgeEndpoints[name],
+            }, null, 2)
+          }],
         };
       }
 
@@ -85,20 +87,22 @@ Args:
       saveConfig(config);
 
       return {
-        content: [{ type: "text", text: JSON.stringify({
-          status: "added",
-          name,
-          endpoint,
-          connectivity: {
-            reachable: probe.reachable,
-            latencyMs: probe.latencyMs,
-            models: probe.models,
-            error: probe.error,
-          },
-          note: probe.reachable
-            ? `Endpoint "${name}" is online with ${probe.models.length} model(s) available.`
-            : `Endpoint "${name}" saved but currently unreachable. It will be available when the server starts.`,
-        }, null, 2) }],
+        content: [{
+          type: "text", text: JSON.stringify({
+            status: "added",
+            name,
+            endpoint,
+            connectivity: {
+              reachable: probe.reachable,
+              latencyMs: probe.latencyMs,
+              models: probe.models,
+              error: probe.error,
+            },
+            note: probe.reachable
+              ? `Endpoint "${name}" is online with ${probe.models.length} model(s) available.`
+              : `Endpoint "${name}" saved but currently unreachable. It will be available when the server starts.`,
+          }, null, 2)
+        }],
       };
     }
   );
@@ -124,12 +128,14 @@ Args:
 
       if (!config.edgeEndpoints[name]) {
         return {
-          content: [{ type: "text", text: JSON.stringify({
-            error: "NOT_FOUND",
-            name,
-            available: Object.keys(config.edgeEndpoints),
-            message: `Edge endpoint "${name}" not found.`,
-          }, null, 2) }],
+          content: [{
+            type: "text", text: JSON.stringify({
+              error: "NOT_FOUND",
+              name,
+              available: Object.keys(config.edgeEndpoints),
+              message: `Edge endpoint "${name}" not found.`,
+            }, null, 2)
+          }],
           isError: true,
         };
       }
@@ -139,12 +145,14 @@ Args:
       saveConfig(config);
 
       return {
-        content: [{ type: "text", text: JSON.stringify({
-          status: "removed",
-          name,
-          removed,
-          remaining: Object.keys(config.edgeEndpoints).length,
-        }, null, 2) }],
+        content: [{
+          type: "text", text: JSON.stringify({
+            status: "removed",
+            name,
+            removed,
+            remaining: Object.keys(config.edgeEndpoints).length,
+          }, null, 2)
+        }],
       };
     }
   );
@@ -174,11 +182,13 @@ Args:
 
       if (names.length === 0) {
         return {
-          content: [{ type: "text", text: JSON.stringify({
-            count: 0,
-            endpoints: [],
-            message: "No edge endpoints configured. Use optimac_edge_add to register one.",
-          }, null, 2) }],
+          content: [{
+            type: "text", text: JSON.stringify({
+              count: 0,
+              endpoints: [],
+              message: "No edge endpoints configured. Use optimac_edge_add to register one.",
+            }, null, 2)
+          }],
         };
       }
 
@@ -209,10 +219,12 @@ Args:
       }
 
       return {
-        content: [{ type: "text", text: JSON.stringify({
-          count: results.length,
-          endpoints: results,
-        }, null, 2) }],
+        content: [{
+          type: "text", text: JSON.stringify({
+            count: results.length,
+            endpoints: results,
+          }, null, 2)
+        }],
       };
     }
   );
@@ -244,11 +256,13 @@ Args:
 
       if (!endpoint) {
         return {
-          content: [{ type: "text", text: JSON.stringify({
-            error: "NOT_FOUND",
-            name,
-            available: Object.keys(config.edgeEndpoints),
-          }, null, 2) }],
+          content: [{
+            type: "text", text: JSON.stringify({
+              error: "NOT_FOUND",
+              name,
+              available: Object.keys(config.edgeEndpoints),
+            }, null, 2)
+          }],
           isError: true,
         };
       }
@@ -262,24 +276,26 @@ Args:
       const latencyMs = Date.now() - start;
 
       return {
-        content: [{ type: "text", text: JSON.stringify({
-          name,
-          url: endpoint.url,
-          runtimeType: endpoint.runtimeType,
-          test: {
-            prompt,
-            response: result.response,
-            model: result.model,
-            latencyMs,
-            error: result.error,
-            usage: result.usage,
-          },
-          verdict: result.error
-            ? `FAIL: ${result.error}`
-            : result.response
-              ? `PASS: Endpoint responded in ${latencyMs}ms using model "${result.model}"`
-              : "WARN: Endpoint returned empty response",
-        }, null, 2) }],
+        content: [{
+          type: "text", text: JSON.stringify({
+            name,
+            url: endpoint.url,
+            runtimeType: endpoint.runtimeType,
+            test: {
+              prompt,
+              response: result.response,
+              model: result.model,
+              latencyMs,
+              error: result.error,
+              usage: result.usage,
+            },
+            verdict: result.error
+              ? `FAIL: ${result.error}`
+              : result.response
+                ? `PASS: Endpoint responded in ${latencyMs}ms using model "${result.model}"`
+                : "WARN: Endpoint returned empty response",
+          }, null, 2)
+        }],
       };
     }
   );
