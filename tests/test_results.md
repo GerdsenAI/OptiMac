@@ -1,8 +1,8 @@
 # OptiMac MCP Server Test Results
 
-**Test Date:** 2026-02-13 22:18:16
+**Test Date:** 2026-02-13 22:33:51
 **Total Tools:** 61
-**Status:** ✅ 29 PASS | ❌ 16 FAIL | ⏭️ 16 SKIP | ⚠️ 0 ERROR
+**Status:** ✅ 38 PASS | ❌ 6 FAIL | ⏭️ 17 SKIP | ⚠️ 0 ERROR
 
 ## Summary by Category
 
@@ -10,12 +10,12 @@
 
 | Tool | Status | Duration | Notes |
 |------|--------|----------|-------|
-| `optimac_memory_status` | ✅ PASS | 5ms |  |
-| `optimac_top_processes` | ✅ PASS | 36ms |  |
+| `optimac_memory_status` | ✅ PASS | 4ms |  |
+| `optimac_top_processes` | ✅ PASS | 37ms |  |
 | `optimac_disk_usage` | ✅ PASS | 3ms |  |
 | `optimac_thermal_status` | ⏭️ SKIP | - | Requires sudo (passwordless not configured) |
 | `optimac_power_settings` | ✅ PASS | 9ms |  |
-| `optimac_system_overview` | ✅ PASS | 171ms |  |
+| `optimac_system_overview` | ✅ PASS | 179ms |  |
 
 ### SYSTEM CONTROL (0/14 passed)
 
@@ -26,7 +26,7 @@
 | `optimac_flush_routes` | ⏭️ SKIP | - | Requires sudo (passwordless not configured) |
 | `optimac_set_power` | ⏭️ SKIP | - | Requires sudo (passwordless not configured) |
 | `optimac_power_optimize` | ⏭️ SKIP | - | Requires sudo (passwordless not configured) |
-| `optimac_kill_process` | ❌ FAIL | 2ms | Error: No process found with PID 99999 |
+| `optimac_kill_process` | ❌ FAIL | 2ms | Refused: "/opt/homebrew/Cellar/python@3.14/3.14.3_ |
 | `optimac_disable_service` | ⏭️ SKIP | - | Requires sudo (passwordless not configured) |
 | `optimac_enable_service` | ⏭️ SKIP | - | Requires sudo (passwordless not configured) |
 | `optimac_disable_spotlight` | ⏭️ SKIP | - | Requires sudo (passwordless not configured) |
@@ -40,73 +40,72 @@
 
 | Tool | Status | Duration | Notes |
 |------|--------|----------|-------|
-| `optimac_ai_stack_status` | ✅ PASS | 27ms |  |
-| `optimac_ollama_start` | ✅ PASS | 5005ms |  |
-| `optimac_ollama_stop` | ✅ PASS | 2022ms |  |
-| `optimac_ollama_models` | ✅ PASS | 1695ms |  |
-| `optimac_mlx_serve` | ❌ FAIL | 8ms | {
-  "status": "not_installed",
-  "install": "pip i |
-| `optimac_mlx_stop` | ✅ PASS | 2022ms |  |
-| `optimac_swap_model` | ✅ PASS | 8495ms |  |
+| `optimac_ai_stack_status` | ✅ PASS | 71ms |  |
+| `optimac_ollama_start` | ✅ PASS | 1ms |  |
+| `optimac_ollama_stop` | ✅ PASS | 2013ms |  |
+| `optimac_ollama_models` | ✅ PASS | 15ms |  |
+| `optimac_mlx_serve` | ⏭️ SKIP | - | Requires MLX (mlx-lm not installed) |
+| `optimac_mlx_stop` | ✅ PASS | 2016ms |  |
+| `optimac_swap_model` | ✅ PASS | 8279ms |  |
 
-### MODEL MANAGEMENT (7/9 passed)
+### MODEL MANAGEMENT (8/9 passed)
 
 | Tool | Status | Duration | Notes |
 |------|--------|----------|-------|
-| `optimac_models_available` | ✅ PASS | 17ms |  |
-| `optimac_ollama_available` | ✅ PASS | 33ms |  |
-| `optimac_model_serve` | ✅ PASS | 541ms |  |
-| `optimac_model_unload` | ✅ PASS | 16ms |  |
-| `optimac_models_running` | ✅ PASS | 14ms |  |
-| `optimac_model_dir_set` | ❌ FAIL | 1ms | MCP error -32602: Input validation error: Invalid  |
+| `optimac_models_available` | ✅ PASS | 13ms |  |
+| `optimac_ollama_available` | ✅ PASS | 32ms |  |
+| `optimac_model_serve` | ✅ PASS | 412ms |  |
+| `optimac_model_unload` | ✅ PASS | 17ms |  |
+| `optimac_models_running` | ✅ PASS | 15ms |  |
+| `optimac_model_dir_set` | ❌ FAIL | 0ms | {"error":"Directory does not exist: /tmp/models"} |
 | `optimac_model_dir_get` | ✅ PASS | 1ms |  |
-| `optimac_model_ram_check` | ❌ FAIL | 0ms | MCP error -32602: Input validation error: Invalid  |
-| `optimac_model_chat` | ✅ PASS | 3420ms |  |
+| `optimac_model_ram_check` | ✅ PASS | 3ms |  |
+| `optimac_model_chat` | ✅ PASS | 3442ms |  |
 
-### MODEL TASKS (1/9 passed)
+### MODEL TASKS (5/9 passed)
 
 | Tool | Status | Duration | Notes |
 |------|--------|----------|-------|
-| `optimac_model_task` | ✅ PASS | 307ms |  |
-| `optimac_model_code_review` | ❌ FAIL | 0ms | MCP error -32602: Input validation error: Invalid  |
-| `optimac_model_generate` | ❌ FAIL | 0ms | MCP error -32602: Input validation error: Invalid  |
-| `optimac_model_edit` | ❌ FAIL | 0ms | MCP error -32602: Input validation error: Invalid  |
-| `optimac_model_summarize` | ❌ FAIL | 0ms | MCP error -32602: Input validation error: Invalid  |
-| `optimac_model_commit` | ❌ FAIL | 0ms | MCP error -32602: Input validation error: Invalid  |
-| `optimac_cloud_escalate` | ❌ FAIL | 0ms | MCP error -32602: Input validation error: Invalid  |
-| `optimac_edge_escalate` | ❌ FAIL | 0ms | MCP error -32602: Input validation error: Invalid  |
-| `optimac_model_route` | ❌ FAIL | 176ms | {
+| `optimac_model_task` | ✅ PASS | 285ms |  |
+| `optimac_model_code_review` | ✅ PASS | 8477ms |  |
+| `optimac_model_generate` | ✅ PASS | 607ms |  |
+| `optimac_model_edit` | ✅ PASS | 749ms |  |
+| `optimac_model_summarize` | ❌ FAIL | 1ms | {"error":"No readable files found in the specified |
+| `optimac_model_commit` | ✅ PASS | 21491ms |  |
+| `optimac_cloud_escalate` | ❌ FAIL | 1ms | {
+  "error": "NO_API_KEY",
+  "provider": "openrout |
+| `optimac_edge_escalate` | ❌ FAIL | 0ms | {
+  "error": "ENDPOINT_NOT_FOUND",
+  "edge_endpoin |
+| `optimac_model_route` | ❌ FAIL | 261ms | {
   "error": "ESCALATION_FAILED",
   "reason": "No  |
 
-### EDGE TOOLS (3/4 passed)
+### EDGE TOOLS (4/4 passed)
 
 | Tool | Status | Duration | Notes |
 |------|--------|----------|-------|
-| `optimac_edge_add` | ✅ PASS | 11ms |  |
-| `optimac_edge_remove` | ✅ PASS | 0ms |  |
-| `optimac_edge_list` | ✅ PASS | 0ms |  |
-| `optimac_edge_test` | ❌ FAIL | 0ms | {
-  "error": "NOT_FOUND",
-  "name": "test-edge",
-  |
+| `optimac_edge_add` | ✅ PASS | 12ms |  |
+| `optimac_edge_test` | ✅ PASS | 15ms |  |
+| `optimac_edge_list` | ✅ PASS | 7ms |  |
+| `optimac_edge_remove` | ✅ PASS | 1ms |  |
 
 ### MEMORY PRESSURE (1/2 passed)
 
 | Tool | Status | Duration | Notes |
 |------|--------|----------|-------|
-| `optimac_memory_pressure_check` | ✅ PASS | 46ms |  |
+| `optimac_memory_pressure_check` | ✅ PASS | 43ms |  |
 | `optimac_maintenance_cycle` | ⏭️ SKIP | - | Requires sudo (passwordless not configured) |
 
-### CONFIGURATION (2/6 passed)
+### CONFIGURATION (5/6 passed)
 
 | Tool | Status | Duration | Notes |
 |------|--------|----------|-------|
 | `optimac_config_get` | ✅ PASS | 0ms |  |
-| `optimac_config_set` | ❌ FAIL | 0ms | MCP error -32602: Input validation error: Invalid  |
-| `optimac_config_protect_process` | ❌ FAIL | 0ms | MCP error -32602: Input validation error: Invalid  |
-| `optimac_config_unprotect_process` | ❌ FAIL | 0ms | MCP error -32602: Input validation error: Invalid  |
+| `optimac_config_set` | ✅ PASS | 1ms |  |
+| `optimac_config_protect_process` | ✅ PASS | 0ms |  |
+| `optimac_config_unprotect_process` | ✅ PASS | 0ms |  |
 | `optimac_config_set_port` | ✅ PASS | 0ms |  |
 | `optimac_debloat` | ⏭️ SKIP | - | Requires sudo (passwordless not configured) |
 
@@ -114,7 +113,7 @@
 
 | Tool | Status | Duration | Notes |
 |------|--------|----------|-------|
-| `optimac_watchdog_start` | ✅ PASS | 7ms |  |
+| `optimac_watchdog_start` | ✅ PASS | 8ms |  |
 | `optimac_watchdog_stop` | ✅ PASS | 0ms |  |
 | `optimac_watchdog_status` | ✅ PASS | 0ms |  |
 | `optimac_audit_read` | ✅ PASS | 0ms |  |
@@ -123,158 +122,33 @@
 
 ### optimac_kill_process
 - **Status:** FAIL
-- **Reason:** Error: No process found with PID 99999
-
-### optimac_mlx_serve
-- **Status:** FAIL
-- **Reason:** {
-  "status": "not_installed",
-  "install": "pip install mlx-lm --break-system-packages"
-}
+- **Reason:** Refused: "/opt/homebrew/Cellar/python@3.14/3.14.3_1/Frameworks/Python.framework/Versions/3.14/Resources/Python.app/Contents/MacOS/Python" (PID 6468) is a protected process. Use force=true to override. Protected list: ollama, lmstudio, LM Studio, mlx, python3, python, node, claude, openclaw, sshd, WindowServer, loginwindow, launchd, kernel_task, mds_stores, coreaudiod, systemsoundserverd
 
 ### optimac_model_dir_set
 - **Status:** FAIL
-- **Reason:** MCP error -32602: Input validation error: Invalid arguments for tool optimac_model_dir_set: [
-  {
-    "code": "invalid_type",
-    "expected": "string",
-    "received": "undefined",
-    "path": [
-      "path"
-    ],
-    "message": "Required"
-  }
-]
-
-### optimac_model_ram_check
-- **Status:** FAIL
-- **Reason:** MCP error -32602: Input validation error: Invalid arguments for tool optimac_model_ram_check: [
-  {
-    "code": "invalid_type",
-    "expected": "number",
-    "received": "undefined",
-    "path": [
-      "size_gb"
-    ],
-    "message": "Required"
-  }
-]
-
-### optimac_model_code_review
-- **Status:** FAIL
-- **Reason:** MCP error -32602: Input validation error: Invalid arguments for tool optimac_model_code_review: [
-  {
-    "code": "invalid_type",
-    "expected": "string",
-    "received": "undefined",
-    "path": [
-      "repo_path"
-    ],
-    "message": "Required"
-  }
-]
-
-### optimac_model_generate
-- **Status:** FAIL
-- **Reason:** MCP error -32602: Input validation error: Invalid arguments for tool optimac_model_generate: [
-  {
-    "code": "invalid_type",
-    "expected": "string",
-    "received": "undefined",
-    "path": [
-      "output_path"
-    ],
-    "message": "Required"
-  }
-]
-
-### optimac_model_edit
-- **Status:** FAIL
-- **Reason:** MCP error -32602: Input validation error: Invalid arguments for tool optimac_model_edit: [
-  {
-    "code": "invalid_type",
-    "expected": "string",
-    "received": "undefined",
-    "path": [
-      "file_path"
-    ],
-    "message": "Required"
-  },
-  {
-    "code": "invalid_type",
-    "expected": "string",
-    "received": "undefined",
-    "path": [
-      "instructions"
-    ],
-    "message": "Required"
-  }
-]
+- **Reason:** {"error":"Directory does not exist: /tmp/models"}
 
 ### optimac_model_summarize
 - **Status:** FAIL
-- **Reason:** MCP error -32602: Input validation error: Invalid arguments for tool optimac_model_summarize: [
-  {
-    "code": "invalid_type",
-    "expected": "array",
-    "received": "undefined",
-    "path": [
-      "paths"
-    ],
-    "message": "Required"
-  }
-]
-
-### optimac_model_commit
-- **Status:** FAIL
-- **Reason:** MCP error -32602: Input validation error: Invalid arguments for tool optimac_model_commit: [
-  {
-    "code": "invalid_type",
-    "expected": "string",
-    "received": "undefined",
-    "path": [
-      "repo_path"
-    ],
-    "message": "Required"
-  }
-]
+- **Reason:** {"error":"No readable files found in the specified paths."}
 
 ### optimac_cloud_escalate
 - **Status:** FAIL
-- **Reason:** MCP error -32602: Input validation error: Invalid arguments for tool optimac_cloud_escalate: [
-  {
-    "code": "invalid_type",
-    "expected": "string",
-    "received": "undefined",
-    "path": [
-      "prompt"
-    ],
-    "message": "Required"
-  }
-]
+- **Reason:** {
+  "error": "NO_API_KEY",
+  "provider": "openrouter",
+  "message": "No API key configured for openrouter. Set it in ~/.optimac/config.json under cloudEndpoints.openrouter.apiKey",
+  "configPath": "~/.optimac/config.json"
+}
 
 ### optimac_edge_escalate
 - **Status:** FAIL
-- **Reason:** MCP error -32602: Input validation error: Invalid arguments for tool optimac_edge_escalate: [
-  {
-    "code": "invalid_type",
-    "expected": "string",
-    "received": "undefined",
-    "path": [
-      "prompt"
-    ],
-    "message": "Required"
-  },
-  {
-    "code": "invalid_type",
-    "expected": "string",
-    "received": "undefined",
-    "path": [
-      "edge_endpoint"
-    ],
-    "message": "Required"
-  }
-]
+- **Reason:** {
+  "error": "ENDPOINT_NOT_FOUND",
+  "edge_endpoint": "test-edge",
+  "available": [],
+  "message": "Edge endpoint \"test-edge\" not configured. Use optimac_edge_add first."
+}
 
 ### optimac_model_route
 - **Status:** FAIL
@@ -283,97 +157,4 @@
   "reason": "No API key for openrouter. Configure in ~/.optimac/config.json",
   "localAttempted": true
 }
-
-### optimac_edge_test
-- **Status:** FAIL
-- **Reason:** {
-  "error": "NOT_FOUND",
-  "name": "test-edge",
-  "available": []
-}
-
-### optimac_config_set
-- **Status:** FAIL
-- **Reason:** MCP error -32602: Input validation error: Invalid arguments for tool optimac_config_set: [
-  {
-    "received": "testKey",
-    "code": "invalid_enum_value",
-    "options": [
-      "memoryWarningThreshold",
-      "memoryCriticalThreshold",
-      "autoKillAtCritical",
-      "maxProcessRSSMB",
-      "maintenanceIntervalSec"
-    ],
-    "path": [
-      "key"
-    ],
-    "message": "Invalid enum value. Expected 'memoryWarningThreshold' | 'memoryCriticalThreshold' | 'autoKillAtCritical' | 'maxProcessRSSMB' | 'maintenanceIntervalSec', received 'testKey'"
-  },
-  {
-    "code": "invalid_union",
-    "unionErrors": [
-      {
-        "issues": [
-          {
-            "code": "invalid_type",
-            "expected": "number",
-            "received": "string",
-            "path": [
-              "value"
-            ],
-            "message": "Expected number, received string"
-          }
-        ],
-        "name": "ZodError"
-      },
-      {
-        "issues": [
-          {
-            "code": "invalid_type",
-            "expected": "boolean",
-            "received": "string",
-            "path": [
-              "value"
-            ],
-            "message": "Expected boolean, received string"
-          }
-        ],
-        "name": "ZodError"
-      }
-    ],
-    "path": [
-      "value"
-    ],
-    "message": "Invalid input"
-  }
-]
-
-### optimac_config_protect_process
-- **Status:** FAIL
-- **Reason:** MCP error -32602: Input validation error: Invalid arguments for tool optimac_config_protect_process: [
-  {
-    "code": "invalid_type",
-    "expected": "string",
-    "received": "undefined",
-    "path": [
-      "process_name"
-    ],
-    "message": "Required"
-  }
-]
-
-### optimac_config_unprotect_process
-- **Status:** FAIL
-- **Reason:** MCP error -32602: Input validation error: Invalid arguments for tool optimac_config_unprotect_process: [
-  {
-    "code": "invalid_type",
-    "expected": "string",
-    "received": "undefined",
-    "path": [
-      "process_name"
-    ],
-    "message": "Required"
-  }
-]
 
