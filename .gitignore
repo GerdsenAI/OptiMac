@@ -5,9 +5,13 @@
 __pycache__/
 *.py[cod]
 *.egg-info/
+*.egg
 venv/
 .venv/
-*.egg
+
+# Node
+node_modules/
+optimac-mcp-server/node_modules/
 
 # IDE
 .vscode/
@@ -20,16 +24,15 @@ venv/
 *.log
 
 # Build artifacts
-dist/
-build/
-__pycache__/
-
-# Build artifacts
 build/
 dist/
 *.spec
 *.dmg
-.venv/
+
+# Test scratch files
+tests/scratch_test.txt
+tests/scratch_test.txt.bak
+
+# Project-specific
 _logo/OptiMac.iconset/
 .docs/OptiMac-Concierge.md
-.DS_Store

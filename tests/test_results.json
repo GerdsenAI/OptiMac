@@ -1,0 +1,432 @@
+{
+  "testDate": "2026-02-13T22:33:51.543318",
+  "summary": {
+    "total": 61,
+    "passed": 38,
+    "failed": 6,
+    "skipped": 17,
+    "error": 0
+  },
+  "results": [
+    {
+      "tool": "optimac_memory_status",
+      "status": "PASS",
+      "durationMs": 4.428,
+      "output": "{'content': [{'type': 'text', 'text': '{\\n  \"pageSize\": 16384,\\n  \"freePages\": 1558994,\\n  \"activePages\": 680037,\\n  \"inactivePages\": 650121,\\n  \"speculativePages\": 80217,\\n  \"wiredPages\": 140543,\\n  "
+    },
+    {
+      "tool": "optimac_top_processes",
+      "status": "PASS",
+      "durationMs": 37.403999999999996,
+      "output": "{'content': [{'type': 'text', 'text': '[\\n  {\\n    \"pid\": null,\\n    \"user\": \"1707\",\\n    \"cpuPercent\": 4.1,\\n    \"memPercent\": 2.7,\\n    \"rssMB\": 1330,\\n    \"vsizeMB\": 428060,\\n    \"state\": \"S\",\\n   "
+    },
+    {
+      "tool": "optimac_disk_usage",
+      "status": "PASS",
+      "durationMs": 3.165,
+      "output": "{'content': [{'type': 'text', 'text': '[\\n  {\\n    \"filesystem\": \"/dev/disk3s1s1\",\\n    \"sizeMB\": 471482,\\n    \"usedMB\": 11698,\\n    \"availableMB\": 136254,\\n    \"usedPercent\": 8,\\n    \"mountPoint\": \"/"
+    },
+    {
+      "tool": "optimac_thermal_status",
+      "status": "SKIP",
+      "reason": "Requires sudo (passwordless not configured)",
+      "durationMs": 0
+    },
+    {
+      "tool": "optimac_power_settings",
+      "status": "PASS",
+      "durationMs": 8.921,
+      "output": "{'content': [{'type': 'text', 'text': '{\\n  \"standby\": 0,\\n  \"Sleep\": \"On\",\\n  \"autorestart\": 1,\\n  \"SleepServices\": 0,\\n  \"powernap\": 0,\\n  \"networkoversleep\": 1,\\n  \"disksleep\": 0,\\n  \"sleep\": 0,\\n "
+    },
+    {
+      "tool": "optimac_system_overview",
+      "status": "PASS",
+      "durationMs": 179.177,
+      "output": "{'content': [{'type': 'text', 'text': '{\\n  \"hostname\": \"Mac-mini.local\",\\n  \"uptime\": \"22:33  up  1:02, 1 user, load averages: 0.98 1.14 1.36\",\\n  \"memory\": {\\n    \"totalMB\": 49152,\\n    \"usedMB\": 12"
+    },
+    {
+      "tool": "optimac_purge_memory",
+      "status": "SKIP",
+      "reason": "Requires sudo (passwordless not configured)",
+      "durationMs": 0
+    },
+    {
+      "tool": "optimac_flush_dns",
+      "status": "SKIP",
+      "reason": "Requires sudo (passwordless not configured)",
+      "durationMs": 0
+    },
+    {
+      "tool": "optimac_flush_routes",
+      "status": "SKIP",
+      "reason": "Requires sudo (passwordless not configured)",
+      "durationMs": 0
+    },
+    {
+      "tool": "optimac_set_power",
+      "status": "SKIP",
+      "reason": "Requires sudo (passwordless not configured)",
+      "durationMs": 0
+    },
+    {
+      "tool": "optimac_power_optimize",
+      "status": "SKIP",
+      "reason": "Requires sudo (passwordless not configured)",
+      "durationMs": 0
+    },
+    {
+      "tool": "optimac_kill_process",
+      "status": "FAIL",
+      "reason": "Refused: \"/opt/homebrew/Cellar/python@3.14/3.14.3_1/Frameworks/Python.framework/Versions/3.14/Resources/Python.app/Contents/MacOS/Python\" (PID 6468) is a protected process. Use force=true to override. Protected list: ollama, lmstudio, LM Studio, mlx, python3, python, node, claude, openclaw, sshd, WindowServer, loginwindow, launchd, kernel_task, mds_stores, coreaudiod, systemsoundserverd",
+      "durationMs": 1.996,
+      "output": {
+        "content": [
+          {
+            "type": "text",
+            "text": "Refused: \"/opt/homebrew/Cellar/python@3.14/3.14.3_1/Frameworks/Python.framework/Versions/3.14/Resources/Python.app/Contents/MacOS/Python\" (PID 6468) is a protected process. Use force=true to override. Protected list: ollama, lmstudio, LM Studio, mlx, python3, python, node, claude, openclaw, sshd, WindowServer, loginwindow, launchd, kernel_task, mds_stores, coreaudiod, systemsoundserverd"
+          }
+        ],
+        "isError": true
+      }
+    },
+    {
+      "tool": "optimac_disable_service",
+      "status": "SKIP",
+      "reason": "Requires sudo (passwordless not configured)",
+      "durationMs": 0
+    },
+    {
+      "tool": "optimac_enable_service",
+      "status": "SKIP",
+      "reason": "Requires sudo (passwordless not configured)",
+      "durationMs": 0
+    },
+    {
+      "tool": "optimac_disable_spotlight",
+      "status": "SKIP",
+      "reason": "Requires sudo (passwordless not configured)",
+      "durationMs": 0
+    },
+    {
+      "tool": "optimac_clear_caches",
+      "status": "SKIP",
+      "reason": "Requires sudo (passwordless not configured)",
+      "durationMs": 0
+    },
+    {
+      "tool": "optimac_set_dns",
+      "status": "SKIP",
+      "reason": "Requires sudo (passwordless not configured)",
+      "durationMs": 0
+    },
+    {
+      "tool": "optimac_network_reset",
+      "status": "SKIP",
+      "reason": "Requires sudo (passwordless not configured)",
+      "durationMs": 0
+    },
+    {
+      "tool": "optimac_reduce_ui_overhead",
+      "status": "SKIP",
+      "reason": "Requires sudo (passwordless not configured)",
+      "durationMs": 0
+    },
+    {
+      "tool": "optimac_nvram_perf_mode",
+      "status": "SKIP",
+      "reason": "Requires sudo (passwordless not configured)",
+      "durationMs": 0
+    },
+    {
+      "tool": "optimac_ai_stack_status",
+      "status": "PASS",
+      "durationMs": 71.13600000000001,
+      "output": "{'content': [{'type': 'text', 'text': '{\\n  \"ollama\": {\\n    \"running\": true,\\n    \"port\": 11434,\\n    \"models\": [\\n      {\\n        \"name\": \"llama3:latest\",\\n        \"sizeMB\": 4445\\n      },\\n      {"
+    },
+    {
+      "tool": "optimac_ollama_start",
+      "status": "PASS",
+      "durationMs": 0.713,
+      "output": "{'content': [{'type': 'text', 'text': '{\\n  \"status\": \"already_running\",\\n  \"port\": 11434\\n}'}]}"
+    },
+    {
+      "tool": "optimac_ollama_stop",
+      "status": "PASS",
+      "durationMs": 2012.504,
+      "output": "{'content': [{'type': 'text', 'text': '{\\n  \"status\": \"still_running\",\\n  \"message\": \"Ollama is still running. Try optimac_kill_process with the PID.\"\\n}'}]}"
+    },
+    {
+      "tool": "optimac_ollama_models",
+      "status": "PASS",
+      "durationMs": 14.973,
+      "output": "{'content': [{'type': 'text', 'text': 'NAME                               ID              SIZE      MODIFIED     \\nllama3:latest                      365c0bd3c000    4.7 GB    6 weeks ago     \\nqwen3:"
+    },
+    {
+      "tool": "optimac_mlx_serve",
+      "status": "SKIP",
+      "reason": "Requires MLX (mlx-lm not installed)",
+      "durationMs": 0
+    },
+    {
+      "tool": "optimac_mlx_stop",
+      "status": "PASS",
+      "durationMs": 2016.179,
+      "output": "{'content': [{'type': 'text', 'text': '{\\n  \"status\": \"stopped\",\\n  \"message\": \"MLX server processes terminated. Run optimac_purge_memory to reclaim pages.\"\\n}'}]}"
+    },
+    {
+      "tool": "optimac_swap_model",
+      "status": "PASS",
+      "durationMs": 8279.366,
+      "output": "{'content': [{'type': 'text', 'text': '{\\n  \"status\": \"complete\",\\n  \"steps\": {\\n    \"stop_ollama\": \"stopped\",\\n    \"purge_memory\": \"done\",\\n    \"start_model\": \"ollama running test on port 11434\"\\n  }"
+    },
+    {
+      "tool": "optimac_models_available",
+      "status": "PASS",
+      "durationMs": 12.76,
+      "output": "{'content': [{'type': 'text', 'text': '{\\n  \"systemRAM\": {\\n    \"totalGB\": 48,\\n    \"usedGB\": 8.7,\\n    \"availableGB\": 39.3\\n  },\\n  \"headroomPolicy\": \"20% above model size reserved for system + infer"
+    },
+    {
+      "tool": "optimac_ollama_available",
+      "status": "PASS",
+      "durationMs": 32.384,
+      "output": "{'content': [{'type': 'text', 'text': '{\\n  \"availableRAM_GB\": 39.3,\\n  \"headroomPolicy\": \"20% above model size reserved\",\\n  \"totalInstalled\": 6,\\n  \"canRunNow\": 6,\\n  \"tooLargeForRAM\": 0,\\n  \"models"
+    },
+    {
+      "tool": "optimac_model_serve",
+      "status": "PASS",
+      "durationMs": 412.086,
+      "output": "{'content': [{'type': 'text', 'text': '{\\n  \"status\": \"error\",\\n  \"runtime\": \"ollama\",\\n  \"model\": \"test\",\\n  \"port\": 11434,\\n  \"api\": \"http://127.0.0.1:11434/v1\",\\n  \"runningModels\": \"NAME    ID    S"
+    },
+    {
+      "tool": "optimac_model_unload",
+      "status": "PASS",
+      "durationMs": 17.183,
+      "output": "{'content': [{'type': 'text', 'text': '{\\n  \"status\": \"complete\",\\n  \"unloaded\": {\\n    \"ollama\": \"no models were loaded\"\\n  },\\n  \"ramAfterUnload\": {\\n    \"availableGB\": 39.2,\\n    \"usedGB\": 8.8\\n  }"
+    },
+    {
+      "tool": "optimac_models_running",
+      "status": "PASS",
+      "durationMs": 15.324000000000002,
+      "output": "{'content': [{'type': 'text', 'text': '{\\n  \"ram\": {\\n    \"totalGB\": 48,\\n    \"usedGB\": 8.8,\\n    \"availableGB\": 39.2\\n  },\\n  \"services\": {\\n    \"ollama\": {\\n      \"serverRunning\": true,\\n      \"port"
+    },
+    {
+      "tool": "optimac_model_dir_set",
+      "status": "FAIL",
+      "reason": "{\"error\":\"Directory does not exist: /tmp/models\"}",
+      "durationMs": 0.35300000000000004,
+      "output": {
+        "content": [
+          {
+            "type": "text",
+            "text": "{\"error\":\"Directory does not exist: /tmp/models\"}"
+          }
+        ],
+        "isError": true
+      }
+    },
+    {
+      "tool": "optimac_model_dir_get",
+      "status": "PASS",
+      "durationMs": 0.57,
+      "output": "{'content': [{'type': 'text', 'text': '{\\n  \"modelBaseDir\": \"/Volumes/M2 Raid0/AI Models\",\\n  \"exists\": true\\n}'}]}"
+    },
+    {
+      "tool": "optimac_model_ram_check",
+      "status": "PASS",
+      "durationMs": 3.062,
+      "output": "{'content': [{'type': 'text', 'text': '{\\n  \"model\": \"test-model\",\\n  \"modelSizeGB\": 4,\\n  \"requiredWithHeadroomGB\": 4.8,\\n  \"availableRAM_GB\": 39.2,\\n  \"totalRAM_GB\": 48,\\n  \"fits\": true,\\n  \"headroo"
+    },
+    {
+      "tool": "optimac_model_chat",
+      "status": "PASS",
+      "durationMs": 3441.977,
+      "output": "{'content': [{'type': 'text', 'text': '{\\n  \"runtime\": \"ollama\",\\n  \"model\": \"llama3:latest\",\\n  \"response\": \"Hello! It\\'s nice to meet you. Is there something I can help you with, or would you like t"
+    },
+    {
+      "tool": "optimac_model_task",
+      "status": "PASS",
+      "durationMs": 285.292,
+      "output": "{'content': [{'type': 'text', 'text': '{\\n  \"model\": \"llama3:latest\",\\n  \"runtime\": \"ollama\",\\n  \"filesRead\": [],\\n  \"response\": \"No output\",\\n  \"usage\": {\\n    \"prompt_tokens\": 56,\\n    \"completion_t"
+    },
+    {
+      "tool": "optimac_model_code_review",
+      "status": "PASS",
+      "durationMs": 8477.073,
+      "output": "{'content': [{'type': 'text', 'text': '{\\n  \"model\": \"llama3:latest\",\\n  \"runtime\": \"ollama\",\\n  \"target\": \"Uncommitted changes (staged + unstaged)\",\\n  \"review\": \"Here is the review:\\\\n\\\\n**SUMMARY**"
+    },
+    {
+      "tool": "optimac_model_generate",
+      "status": "PASS",
+      "durationMs": 606.611,
+      "output": "{'content': [{'type': 'text', 'text': '{\\n  \"model\": \"llama3:latest\",\\n  \"runtime\": \"ollama\",\\n  \"generated\": \"/Users/gerdsenai/tmp/optimac_test_gen.ts\",\\n  \"sizeBytes\": 65,\\n  \"contextFilesUsed\": [],"
+    },
+    {
+      "tool": "optimac_model_edit",
+      "status": "PASS",
+      "durationMs": 749.042,
+      "output": "{'content': [{'type': 'text', 'text': '{\\n  \"model\": \"llama3:latest\",\\n  \"runtime\": \"ollama\",\\n  \"edited\": \"/Users/gerdsenai/Documents/OptiMac/tests/scratch_test.txt\",\\n  \"backup\": \"/Users/gerdsenai/D"
+    },
+    {
+      "tool": "optimac_model_summarize",
+      "status": "FAIL",
+      "reason": "{\"error\":\"No readable files found in the specified paths.\"}",
+      "durationMs": 0.54,
+      "output": {
+        "content": [
+          {
+            "type": "text",
+            "text": "{\"error\":\"No readable files found in the specified paths.\"}"
+          }
+        ],
+        "isError": true
+      }
+    },
+    {
+      "tool": "optimac_model_commit",
+      "status": "PASS",
+      "durationMs": 21490.818,
+      "output": "{'content': [{'type': 'text', 'text': '{\\n  \"model\": \"llama3:latest\",\\n  \"runtime\": \"ollama\",\\n  \"commitMessage\": \"Here are the generated commit messages:\\\\n\\\\n1. `fix(build): professional DMG install"
+    },
+    {
+      "tool": "optimac_cloud_escalate",
+      "status": "FAIL",
+      "reason": "{\n  \"error\": \"NO_API_KEY\",\n  \"provider\": \"openrouter\",\n  \"message\": \"No API key configured for openrouter. Set it in ~/.optimac/config.json under cloudEndpoints.openrouter.apiKey\",\n  \"configPath\": \"~/.optimac/config.json\"\n}",
+      "durationMs": 0.5599999999999999,
+      "output": {
+        "content": [
+          {
+            "type": "text",
+            "text": "{\n  \"error\": \"NO_API_KEY\",\n  \"provider\": \"openrouter\",\n  \"message\": \"No API key configured for openrouter. Set it in ~/.optimac/config.json under cloudEndpoints.openrouter.apiKey\",\n  \"configPath\": \"~/.optimac/config.json\"\n}"
+          }
+        ],
+        "isError": true
+      }
+    },
+    {
+      "tool": "optimac_edge_escalate",
+      "status": "FAIL",
+      "reason": "{\n  \"error\": \"ENDPOINT_NOT_FOUND\",\n  \"edge_endpoint\": \"test-edge\",\n  \"available\": [],\n  \"message\": \"Edge endpoint \\\"test-edge\\\" not configured. Use optimac_edge_add first.\"\n}",
+      "durationMs": 0.285,
+      "output": {
+        "content": [
+          {
+            "type": "text",
+            "text": "{\n  \"error\": \"ENDPOINT_NOT_FOUND\",\n  \"edge_endpoint\": \"test-edge\",\n  \"available\": [],\n  \"message\": \"Edge endpoint \\\"test-edge\\\" not configured. Use optimac_edge_add first.\"\n}"
+          }
+        ],
+        "isError": true
+      }
+    },
+    {
+      "tool": "optimac_model_route",
+      "status": "FAIL",
+      "reason": "{\n  \"error\": \"ESCALATION_FAILED\",\n  \"reason\": \"No API key for openrouter. Configure in ~/.optimac/config.json\",\n  \"localAttempted\": true\n}",
+      "durationMs": 260.52599999999995,
+      "output": {
+        "content": [
+          {
+            "type": "text",
+            "text": "{\n  \"error\": \"ESCALATION_FAILED\",\n  \"reason\": \"No API key for openrouter. Configure in ~/.optimac/config.json\",\n  \"localAttempted\": true\n}"
+          }
+        ],
+        "isError": true
+      }
+    },
+    {
+      "tool": "optimac_edge_add",
+      "status": "PASS",
+      "durationMs": 12.094000000000001,
+      "output": "{'content': [{'type': 'text', 'text': '{\\n  \"status\": \"added\",\\n  \"name\": \"test-edge\",\\n  \"endpoint\": {\\n    \"url\": \"http://localhost:8080\",\\n    \"runtimeType\": \"openai-compatible\",\\n    \"priority\": 5"
+    },
+    {
+      "tool": "optimac_edge_test",
+      "status": "PASS",
+      "durationMs": 14.773,
+      "output": "{'content': [{'type': 'text', 'text': '{\\n  \"name\": \"test-edge\",\\n  \"url\": \"http://localhost:8080\",\\n  \"runtimeType\": \"openai-compatible\",\\n  \"test\": {\\n    \"prompt\": \"Say hello in one sentence.\",\\n  "
+    },
+    {
+      "tool": "optimac_edge_list",
+      "status": "PASS",
+      "durationMs": 6.772,
+      "output": "{'content': [{'type': 'text', 'text': '{\\n  \"count\": 1,\\n  \"endpoints\": [\\n    {\\n      \"name\": \"test-edge\",\\n      \"url\": \"http://localhost:8080\",\\n      \"runtimeType\": \"openai-compatible\",\\n      \"p"
+    },
+    {
+      "tool": "optimac_edge_remove",
+      "status": "PASS",
+      "durationMs": 0.501,
+      "output": "{'content': [{'type': 'text', 'text': '{\\n  \"status\": \"removed\",\\n  \"name\": \"test-edge\",\\n  \"removed\": {\\n    \"url\": \"http://localhost:8080\",\\n    \"runtimeType\": \"openai-compatible\",\\n    \"priority\": "
+    },
+    {
+      "tool": "optimac_memory_pressure_check",
+      "status": "PASS",
+      "durationMs": 43.275,
+      "output": "{'content': [{'type': 'text', 'text': '{\\n  \"memoryUsedMB\": 14723,\\n  \"memoryTotalMB\": 49152,\\n  \"usedPercent\": 30,\\n  \"pressureLevel\": \"nominal\",\\n  \"swapUsedMB\": 0,\\n  \"level\": \"nominal\",\\n  \"action"
+    },
+    {
+      "tool": "optimac_maintenance_cycle",
+      "status": "SKIP",
+      "reason": "Requires sudo (passwordless not configured)",
+      "durationMs": 0
+    },
+    {
+      "tool": "optimac_config_get",
+      "status": "PASS",
+      "durationMs": 0.331,
+      "output": "{'content': [{'type': 'text', 'text': '{\\n  \"protectedProcesses\": [\\n    \"ollama\",\\n    \"lmstudio\",\\n    \"LM Studio\",\\n    \"mlx\",\\n    \"python3\",\\n    \"python\",\\n    \"node\",\\n    \"claude\",\\n    \"openc"
+    },
+    {
+      "tool": "optimac_config_set",
+      "status": "PASS",
+      "durationMs": 0.851,
+      "output": "{'content': [{'type': 'text', 'text': '{\\n  \"status\": \"updated\",\\n  \"key\": \"memoryWarningThreshold\",\\n  \"value\": 0.75,\\n  \"saved\": true\\n}'}]}"
+    },
+    {
+      "tool": "optimac_config_protect_process",
+      "status": "PASS",
+      "durationMs": 0.388,
+      "output": "{'content': [{'type': 'text', 'text': '{\\n  \"status\": \"added\",\\n  \"process\": \"test-process\",\\n  \"protectedList\": [\\n    \"ollama\",\\n    \"lmstudio\",\\n    \"LM Studio\",\\n    \"mlx\",\\n    \"python3\",\\n    \"p"
+    },
+    {
+      "tool": "optimac_config_unprotect_process",
+      "status": "PASS",
+      "durationMs": 0.185,
+      "output": "{'content': [{'type': 'text', 'text': '{\\n  \"status\": \"removed\",\\n  \"process\": \"test-process\",\\n  \"protectedList\": [\\n    \"ollama\",\\n    \"lmstudio\",\\n    \"LM Studio\",\\n    \"mlx\",\\n    \"python3\",\\n    "
+    },
+    {
+      "tool": "optimac_config_set_port",
+      "status": "PASS",
+      "durationMs": 0.174,
+      "output": "{'content': [{'type': 'text', 'text': '{\\n  \"status\": \"updated\",\\n  \"service\": \"ollama\",\\n  \"port\": 11434,\\n  \"allPorts\": {\\n    \"ollama\": 11434,\\n    \"lmstudio\": 1234,\\n    \"mlx\": 8080\\n  }\\n}'}]}"
+    },
+    {
+      "tool": "optimac_debloat",
+      "status": "SKIP",
+      "reason": "Requires sudo (passwordless not configured)",
+      "durationMs": 0
+    },
+    {
+      "tool": "optimac_watchdog_start",
+      "status": "PASS",
+      "durationMs": 7.554,
+      "output": "{'content': [{'type': 'text', 'text': '{\\n  \"running\": true,\\n  \"intervalMs\": 21600000,\\n  \"checksPerformed\": 0,\\n  \"lastCheck\": null,\\n  \"autoActions\": 0\\n}'}]}"
+    },
+    {
+      "tool": "optimac_watchdog_stop",
+      "status": "PASS",
+      "durationMs": 0.312,
+      "output": "{'content': [{'type': 'text', 'text': '{\\n  \"running\": false,\\n  \"intervalMs\": 21600000,\\n  \"checksPerformed\": 0,\\n  \"lastCheck\": null,\\n  \"autoActions\": 0\\n}'}]}"
+    },
+    {
+      "tool": "optimac_watchdog_status",
+      "status": "PASS",
+      "durationMs": 0.145,
+      "output": "{'content': [{'type': 'text', 'text': '{\\n  \"running\": false,\\n  \"intervalMs\": 21600000,\\n  \"checksPerformed\": 0,\\n  \"lastCheck\": null,\\n  \"autoActions\": 0\\n}'}]}"
+    },
+    {
+      "tool": "optimac_audit_read",
+      "status": "PASS",
+      "durationMs": 0.185,
+      "output": "{'content': [{'type': 'text', 'text': '{\\n  \"totalEntries\": 4,\\n  \"file\": \"/Users/gerdsenai/.optimac/audit.jsonl\",\\n  \"entries\": [\\n    {\\n      \"timestamp\": \"2026-02-14T04:18:16.721Z\",\\n      \"tool\":"
+    }
+  ]
+}
