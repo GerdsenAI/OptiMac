@@ -1,0 +1,522 @@
+{
+  "testDate": "2026-02-13T22:18:16.732527",
+  "summary": {
+    "total": 61,
+    "passed": 29,
+    "failed": 16,
+    "skipped": 16,
+    "error": 0
+  },
+  "results": [
+    {
+      "tool": "optimac_memory_status",
+      "status": "PASS",
+      "durationMs": 5.3420000000000005,
+      "output": "{'content': [{'type': 'text', 'text': '{\\n  \"pageSize\": 16384,\\n  \"freePages\": 1204499,\\n  \"activePages\": 879429,\\n  \"inactivePages\": 599799,\\n  \"speculativePages\": 285537,\\n  \"wiredPages\": 140814,\\n "
+    },
+    {
+      "tool": "optimac_top_processes",
+      "status": "PASS",
+      "durationMs": 35.971999999999994,
+      "output": "{'content': [{'type': 'text', 'text': '[\\n  {\\n    \"pid\": null,\\n    \"user\": \"1707\",\\n    \"cpuPercent\": 1.1,\\n    \"memPercent\": 2.2,\\n    \"rssMB\": 1063,\\n    \"vsizeMB\": 427739,\\n    \"state\": \"S\",\\n   "
+    },
+    {
+      "tool": "optimac_disk_usage",
+      "status": "PASS",
+      "durationMs": 2.888,
+      "output": "{'content': [{'type': 'text', 'text': '[\\n  {\\n    \"filesystem\": \"/dev/disk3s1s1\",\\n    \"sizeMB\": 471482,\\n    \"usedMB\": 11698,\\n    \"availableMB\": 136278,\\n    \"usedPercent\": 8,\\n    \"mountPoint\": \"/"
+    },
+    {
+      "tool": "optimac_thermal_status",
+      "status": "SKIP",
+      "reason": "Requires sudo (passwordless not configured)",
+      "durationMs": 0
+    },
+    {
+      "tool": "optimac_power_settings",
+      "status": "PASS",
+      "durationMs": 8.671999999999999,
+      "output": "{'content': [{'type': 'text', 'text': '{\\n  \"standby\": 0,\\n  \"Sleep\": \"On\",\\n  \"autorestart\": 1,\\n  \"SleepServices\": 0,\\n  \"powernap\": 0,\\n  \"networkoversleep\": 1,\\n  \"disksleep\": 0,\\n  \"sleep\": 0,\\n "
+    },
+    {
+      "tool": "optimac_system_overview",
+      "status": "PASS",
+      "durationMs": 171.481,
+      "output": "{'content': [{'type': 'text', 'text': '{\\n  \"hostname\": \"Mac-mini.local\",\\n  \"uptime\": \"22:17  up 47 mins, 1 user, load averages: 1.27 1.15 1.65\",\\n  \"memory\": {\\n    \"totalMB\": 49152,\\n    \"usedMB\": "
+    },
+    {
+      "tool": "optimac_purge_memory",
+      "status": "SKIP",
+      "reason": "Requires sudo (passwordless not configured)",
+      "durationMs": 0
+    },
+    {
+      "tool": "optimac_flush_dns",
+      "status": "SKIP",
+      "reason": "Requires sudo (passwordless not configured)",
+      "durationMs": 0
+    },
+    {
+      "tool": "optimac_flush_routes",
+      "status": "SKIP",
+      "reason": "Requires sudo (passwordless not configured)",
+      "durationMs": 0
+    },
+    {
+      "tool": "optimac_set_power",
+      "status": "SKIP",
+      "reason": "Requires sudo (passwordless not configured)",
+      "durationMs": 0
+    },
+    {
+      "tool": "optimac_power_optimize",
+      "status": "SKIP",
+      "reason": "Requires sudo (passwordless not configured)",
+      "durationMs": 0
+    },
+    {
+      "tool": "optimac_kill_process",
+      "status": "FAIL",
+      "reason": "Error: No process found with PID 99999",
+      "durationMs": 1.7409999999999999,
+      "output": {
+        "content": [
+          {
+            "type": "text",
+            "text": "Error: No process found with PID 99999"
+          }
+        ],
+        "isError": true
+      }
+    },
+    {
+      "tool": "optimac_disable_service",
+      "status": "SKIP",
+      "reason": "Requires sudo (passwordless not configured)",
+      "durationMs": 0
+    },
+    {
+      "tool": "optimac_enable_service",
+      "status": "SKIP",
+      "reason": "Requires sudo (passwordless not configured)",
+      "durationMs": 0
+    },
+    {
+      "tool": "optimac_disable_spotlight",
+      "status": "SKIP",
+      "reason": "Requires sudo (passwordless not configured)",
+      "durationMs": 0
+    },
+    {
+      "tool": "optimac_clear_caches",
+      "status": "SKIP",
+      "reason": "Requires sudo (passwordless not configured)",
+      "durationMs": 0
+    },
+    {
+      "tool": "optimac_set_dns",
+      "status": "SKIP",
+      "reason": "Requires sudo (passwordless not configured)",
+      "durationMs": 0
+    },
+    {
+      "tool": "optimac_network_reset",
+      "status": "SKIP",
+      "reason": "Requires sudo (passwordless not configured)",
+      "durationMs": 0
+    },
+    {
+      "tool": "optimac_reduce_ui_overhead",
+      "status": "SKIP",
+      "reason": "Requires sudo (passwordless not configured)",
+      "durationMs": 0
+    },
+    {
+      "tool": "optimac_nvram_perf_mode",
+      "status": "SKIP",
+      "reason": "Requires sudo (passwordless not configured)",
+      "durationMs": 0
+    },
+    {
+      "tool": "optimac_ai_stack_status",
+      "status": "PASS",
+      "durationMs": 26.765,
+      "output": "{'content': [{'type': 'text', 'text': '{\\n  \"ollama\": {\\n    \"running\": false,\\n    \"port\": 11434\\n  },\\n  \"lmstudio\": {\\n    \"running\": false,\\n    \"port\": 1234\\n  },\\n  \"mlx_server\": {\\n    \"running"
+    },
+    {
+      "tool": "optimac_ollama_start",
+      "status": "PASS",
+      "durationMs": 5005.089,
+      "output": "{'content': [{'type': 'text', 'text': '{\\n  \"status\": \"started\",\\n  \"port\": 11434,\\n  \"message\": \"Ollama server is now running\"\\n}'}]}"
+    },
+    {
+      "tool": "optimac_ollama_stop",
+      "status": "PASS",
+      "durationMs": 2021.811,
+      "output": "{'content': [{'type': 'text', 'text': '{\\n  \"status\": \"stopped\",\\n  \"message\": \"Ollama server stopped. Run optimac_purge_memory to reclaim freed pages.\"\\n}'}]}"
+    },
+    {
+      "tool": "optimac_ollama_models",
+      "status": "PASS",
+      "durationMs": 1694.675,
+      "output": "{'content': [{'type': 'text', 'text': 'NAME                               ID              SIZE      MODIFIED     \\nllama3:latest                      365c0bd3c000    4.7 GB    6 weeks ago     \\nqwen3:"
+    },
+    {
+      "tool": "optimac_mlx_serve",
+      "status": "FAIL",
+      "reason": "{\n  \"status\": \"not_installed\",\n  \"install\": \"pip install mlx-lm --break-system-packages\"\n}",
+      "durationMs": 8.177,
+      "output": {
+        "content": [
+          {
+            "type": "text",
+            "text": "{\n  \"status\": \"not_installed\",\n  \"install\": \"pip install mlx-lm --break-system-packages\"\n}"
+          }
+        ],
+        "isError": true
+      }
+    },
+    {
+      "tool": "optimac_mlx_stop",
+      "status": "PASS",
+      "durationMs": 2021.747,
+      "output": "{'content': [{'type': 'text', 'text': '{\\n  \"status\": \"stopped\",\\n  \"message\": \"MLX server processes terminated. Run optimac_purge_memory to reclaim pages.\"\\n}'}]}"
+    },
+    {
+      "tool": "optimac_swap_model",
+      "status": "PASS",
+      "durationMs": 8494.889000000001,
+      "output": "{'content': [{'type': 'text', 'text': '{\\n  \"status\": \"complete\",\\n  \"steps\": {\\n    \"stop_ollama\": \"stopped\",\\n    \"purge_memory\": \"done\",\\n    \"start_model\": \"ollama running test on port 11434\"\\n  }"
+    },
+    {
+      "tool": "optimac_models_available",
+      "status": "PASS",
+      "durationMs": 16.976000000000003,
+      "output": "{'content': [{'type': 'text', 'text': '{\\n  \"systemRAM\": {\\n    \"totalGB\": 48,\\n    \"usedGB\": 9.4,\\n    \"availableGB\": 38.6\\n  },\\n  \"headroomPolicy\": \"20% above model size reserved for system + infer"
+    },
+    {
+      "tool": "optimac_ollama_available",
+      "status": "PASS",
+      "durationMs": 32.724999999999994,
+      "output": "{'content': [{'type': 'text', 'text': '{\\n  \"availableRAM_GB\": 38.6,\\n  \"headroomPolicy\": \"20% above model size reserved\",\\n  \"totalInstalled\": 6,\\n  \"canRunNow\": 6,\\n  \"tooLargeForRAM\": 0,\\n  \"models"
+    },
+    {
+      "tool": "optimac_model_serve",
+      "status": "PASS",
+      "durationMs": 541.363,
+      "output": "{'content': [{'type': 'text', 'text': '{\\n  \"status\": \"error\",\\n  \"runtime\": \"ollama\",\\n  \"model\": \"test\",\\n  \"port\": 11434,\\n  \"api\": \"http://127.0.0.1:11434/v1\",\\n  \"runningModels\": \"NAME    ID    S"
+    },
+    {
+      "tool": "optimac_model_unload",
+      "status": "PASS",
+      "durationMs": 16.266,
+      "output": "{'content': [{'type': 'text', 'text': '{\\n  \"status\": \"complete\",\\n  \"unloaded\": {\\n    \"ollama\": \"no models were loaded\"\\n  },\\n  \"ramAfterUnload\": {\\n    \"availableGB\": 38.5,\\n    \"usedGB\": 9.5\\n  }"
+    },
+    {
+      "tool": "optimac_models_running",
+      "status": "PASS",
+      "durationMs": 13.671000000000001,
+      "output": "{'content': [{'type': 'text', 'text': '{\\n  \"ram\": {\\n    \"totalGB\": 48,\\n    \"usedGB\": 9.5,\\n    \"availableGB\": 38.5\\n  },\\n  \"services\": {\\n    \"ollama\": {\\n      \"serverRunning\": true,\\n      \"port"
+    },
+    {
+      "tool": "optimac_model_dir_set",
+      "status": "FAIL",
+      "reason": "MCP error -32602: Input validation error: Invalid arguments for tool optimac_model_dir_set: [\n  {\n    \"code\": \"invalid_type\",\n    \"expected\": \"string\",\n    \"received\": \"undefined\",\n    \"path\": [\n      \"path\"\n    ],\n    \"message\": \"Required\"\n  }\n]",
+      "durationMs": 0.6719999999999999,
+      "output": {
+        "content": [
+          {
+            "type": "text",
+            "text": "MCP error -32602: Input validation error: Invalid arguments for tool optimac_model_dir_set: [\n  {\n    \"code\": \"invalid_type\",\n    \"expected\": \"string\",\n    \"received\": \"undefined\",\n    \"path\": [\n      \"path\"\n    ],\n    \"message\": \"Required\"\n  }\n]"
+          }
+        ],
+        "isError": true
+      }
+    },
+    {
+      "tool": "optimac_model_dir_get",
+      "status": "PASS",
+      "durationMs": 0.535,
+      "output": "{'content': [{'type': 'text', 'text': '{\\n  \"modelBaseDir\": \"/Volumes/M2 Raid0/AI Models\",\\n  \"exists\": true\\n}'}]}"
+    },
+    {
+      "tool": "optimac_model_ram_check",
+      "status": "FAIL",
+      "reason": "MCP error -32602: Input validation error: Invalid arguments for tool optimac_model_ram_check: [\n  {\n    \"code\": \"invalid_type\",\n    \"expected\": \"number\",\n    \"received\": \"undefined\",\n    \"path\": [\n      \"size_gb\"\n    ],\n    \"message\": \"Required\"\n  }\n]",
+      "durationMs": 0.192,
+      "output": {
+        "content": [
+          {
+            "type": "text",
+            "text": "MCP error -32602: Input validation error: Invalid arguments for tool optimac_model_ram_check: [\n  {\n    \"code\": \"invalid_type\",\n    \"expected\": \"number\",\n    \"received\": \"undefined\",\n    \"path\": [\n      \"size_gb\"\n    ],\n    \"message\": \"Required\"\n  }\n]"
+          }
+        ],
+        "isError": true
+      }
+    },
+    {
+      "tool": "optimac_model_chat",
+      "status": "PASS",
+      "durationMs": 3420.236,
+      "output": "{'content': [{'type': 'text', 'text': '{\\n  \"runtime\": \"ollama\",\\n  \"model\": \"llama3:latest\",\\n  \"response\": \"Hello! It\\'s nice to meet you. Is there something I can help you with, or would you like t"
+    },
+    {
+      "tool": "optimac_model_task",
+      "status": "PASS",
+      "durationMs": 306.69800000000004,
+      "output": "{'content': [{'type': 'text', 'text': '{\\n  \"model\": \"llama3:latest\",\\n  \"runtime\": \"ollama\",\\n  \"filesRead\": [],\\n  \"response\": \"```\\\\n\\\\n```\",\\n  \"usage\": {\\n    \"prompt_tokens\": 56,\\n    \"completio"
+    },
+    {
+      "tool": "optimac_model_code_review",
+      "status": "FAIL",
+      "reason": "MCP error -32602: Input validation error: Invalid arguments for tool optimac_model_code_review: [\n  {\n    \"code\": \"invalid_type\",\n    \"expected\": \"string\",\n    \"received\": \"undefined\",\n    \"path\": [\n      \"repo_path\"\n    ],\n    \"message\": \"Required\"\n  }\n]",
+      "durationMs": 0.345,
+      "output": {
+        "content": [
+          {
+            "type": "text",
+            "text": "MCP error -32602: Input validation error: Invalid arguments for tool optimac_model_code_review: [\n  {\n    \"code\": \"invalid_type\",\n    \"expected\": \"string\",\n    \"received\": \"undefined\",\n    \"path\": [\n      \"repo_path\"\n    ],\n    \"message\": \"Required\"\n  }\n]"
+          }
+        ],
+        "isError": true
+      }
+    },
+    {
+      "tool": "optimac_model_generate",
+      "status": "FAIL",
+      "reason": "MCP error -32602: Input validation error: Invalid arguments for tool optimac_model_generate: [\n  {\n    \"code\": \"invalid_type\",\n    \"expected\": \"string\",\n    \"received\": \"undefined\",\n    \"path\": [\n      \"output_path\"\n    ],\n    \"message\": \"Required\"\n  }\n]",
+      "durationMs": 0.203,
+      "output": {
+        "content": [
+          {
+            "type": "text",
+            "text": "MCP error -32602: Input validation error: Invalid arguments for tool optimac_model_generate: [\n  {\n    \"code\": \"invalid_type\",\n    \"expected\": \"string\",\n    \"received\": \"undefined\",\n    \"path\": [\n      \"output_path\"\n    ],\n    \"message\": \"Required\"\n  }\n]"
+          }
+        ],
+        "isError": true
+      }
+    },
+    {
+      "tool": "optimac_model_edit",
+      "status": "FAIL",
+      "reason": "MCP error -32602: Input validation error: Invalid arguments for tool optimac_model_edit: [\n  {\n    \"code\": \"invalid_type\",\n    \"expected\": \"string\",\n    \"received\": \"undefined\",\n    \"path\": [\n      \"file_path\"\n    ],\n    \"message\": \"Required\"\n  },\n  {\n    \"code\": \"invalid_type\",\n    \"expected\": \"string\",\n    \"received\": \"undefined\",\n    \"path\": [\n      \"instructions\"\n    ],\n    \"message\": \"Required\"\n  }\n]",
+      "durationMs": 0.299,
+      "output": {
+        "content": [
+          {
+            "type": "text",
+            "text": "MCP error -32602: Input validation error: Invalid arguments for tool optimac_model_edit: [\n  {\n    \"code\": \"invalid_type\",\n    \"expected\": \"string\",\n    \"received\": \"undefined\",\n    \"path\": [\n      \"file_path\"\n    ],\n    \"message\": \"Required\"\n  },\n  {\n    \"code\": \"invalid_type\",\n    \"expected\": \"string\",\n    \"received\": \"undefined\",\n    \"path\": [\n      \"instructions\"\n    ],\n    \"message\": \"Required\"\n  }\n]"
+          }
+        ],
+        "isError": true
+      }
+    },
+    {
+      "tool": "optimac_model_summarize",
+      "status": "FAIL",
+      "reason": "MCP error -32602: Input validation error: Invalid arguments for tool optimac_model_summarize: [\n  {\n    \"code\": \"invalid_type\",\n    \"expected\": \"array\",\n    \"received\": \"undefined\",\n    \"path\": [\n      \"paths\"\n    ],\n    \"message\": \"Required\"\n  }\n]",
+      "durationMs": 0.19699999999999998,
+      "output": {
+        "content": [
+          {
+            "type": "text",
+            "text": "MCP error -32602: Input validation error: Invalid arguments for tool optimac_model_summarize: [\n  {\n    \"code\": \"invalid_type\",\n    \"expected\": \"array\",\n    \"received\": \"undefined\",\n    \"path\": [\n      \"paths\"\n    ],\n    \"message\": \"Required\"\n  }\n]"
+          }
+        ],
+        "isError": true
+      }
+    },
+    {
+      "tool": "optimac_model_commit",
+      "status": "FAIL",
+      "reason": "MCP error -32602: Input validation error: Invalid arguments for tool optimac_model_commit: [\n  {\n    \"code\": \"invalid_type\",\n    \"expected\": \"string\",\n    \"received\": \"undefined\",\n    \"path\": [\n      \"repo_path\"\n    ],\n    \"message\": \"Required\"\n  }\n]",
+      "durationMs": 0.263,
+      "output": {
+        "content": [
+          {
+            "type": "text",
+            "text": "MCP error -32602: Input validation error: Invalid arguments for tool optimac_model_commit: [\n  {\n    \"code\": \"invalid_type\",\n    \"expected\": \"string\",\n    \"received\": \"undefined\",\n    \"path\": [\n      \"repo_path\"\n    ],\n    \"message\": \"Required\"\n  }\n]"
+          }
+        ],
+        "isError": true
+      }
+    },
+    {
+      "tool": "optimac_cloud_escalate",
+      "status": "FAIL",
+      "reason": "MCP error -32602: Input validation error: Invalid arguments for tool optimac_cloud_escalate: [\n  {\n    \"code\": \"invalid_type\",\n    \"expected\": \"string\",\n    \"received\": \"undefined\",\n    \"path\": [\n      \"prompt\"\n    ],\n    \"message\": \"Required\"\n  }\n]",
+      "durationMs": 0.191,
+      "output": {
+        "content": [
+          {
+            "type": "text",
+            "text": "MCP error -32602: Input validation error: Invalid arguments for tool optimac_cloud_escalate: [\n  {\n    \"code\": \"invalid_type\",\n    \"expected\": \"string\",\n    \"received\": \"undefined\",\n    \"path\": [\n      \"prompt\"\n    ],\n    \"message\": \"Required\"\n  }\n]"
+          }
+        ],
+        "isError": true
+      }
+    },
+    {
+      "tool": "optimac_edge_escalate",
+      "status": "FAIL",
+      "reason": "MCP error -32602: Input validation error: Invalid arguments for tool optimac_edge_escalate: [\n  {\n    \"code\": \"invalid_type\",\n    \"expected\": \"string\",\n    \"received\": \"undefined\",\n    \"path\": [\n      \"prompt\"\n    ],\n    \"message\": \"Required\"\n  },\n  {\n    \"code\": \"invalid_type\",\n    \"expected\": \"string\",\n    \"received\": \"undefined\",\n    \"path\": [\n      \"edge_endpoint\"\n    ],\n    \"message\": \"Required\"\n  }\n]",
+      "durationMs": 0.258,
+      "output": {
+        "content": [
+          {
+            "type": "text",
+            "text": "MCP error -32602: Input validation error: Invalid arguments for tool optimac_edge_escalate: [\n  {\n    \"code\": \"invalid_type\",\n    \"expected\": \"string\",\n    \"received\": \"undefined\",\n    \"path\": [\n      \"prompt\"\n    ],\n    \"message\": \"Required\"\n  },\n  {\n    \"code\": \"invalid_type\",\n    \"expected\": \"string\",\n    \"received\": \"undefined\",\n    \"path\": [\n      \"edge_endpoint\"\n    ],\n    \"message\": \"Required\"\n  }\n]"
+          }
+        ],
+        "isError": true
+      }
+    },
+    {
+      "tool": "optimac_model_route",
+      "status": "FAIL",
+      "reason": "{\n  \"error\": \"ESCALATION_FAILED\",\n  \"reason\": \"No API key for openrouter. Configure in ~/.optimac/config.json\",\n  \"localAttempted\": true\n}",
+      "durationMs": 176.157,
+      "output": {
+        "content": [
+          {
+            "type": "text",
+            "text": "{\n  \"error\": \"ESCALATION_FAILED\",\n  \"reason\": \"No API key for openrouter. Configure in ~/.optimac/config.json\",\n  \"localAttempted\": true\n}"
+          }
+        ],
+        "isError": true
+      }
+    },
+    {
+      "tool": "optimac_edge_add",
+      "status": "PASS",
+      "durationMs": 11.1,
+      "output": "{'content': [{'type': 'text', 'text': '{\\n  \"status\": \"added\",\\n  \"name\": \"test-edge\",\\n  \"endpoint\": {\\n    \"url\": \"http://localhost:8080\",\\n    \"runtimeType\": \"openai-compatible\",\\n    \"priority\": 5"
+    },
+    {
+      "tool": "optimac_edge_remove",
+      "status": "PASS",
+      "durationMs": 0.49299999999999994,
+      "output": "{'content': [{'type': 'text', 'text': '{\\n  \"status\": \"removed\",\\n  \"name\": \"test-edge\",\\n  \"removed\": {\\n    \"url\": \"http://localhost:8080\",\\n    \"runtimeType\": \"openai-compatible\",\\n    \"priority\": "
+    },
+    {
+      "tool": "optimac_edge_list",
+      "status": "PASS",
+      "durationMs": 0.296,
+      "output": "{'content': [{'type': 'text', 'text': '{\\n  \"count\": 0,\\n  \"endpoints\": [],\\n  \"message\": \"No edge endpoints configured. Use optimac_edge_add to register one.\"\\n}'}]}"
+    },
+    {
+      "tool": "optimac_edge_test",
+      "status": "FAIL",
+      "reason": "{\n  \"error\": \"NOT_FOUND\",\n  \"name\": \"test-edge\",\n  \"available\": []\n}",
+      "durationMs": 0.257,
+      "output": {
+        "content": [
+          {
+            "type": "text",
+            "text": "{\n  \"error\": \"NOT_FOUND\",\n  \"name\": \"test-edge\",\n  \"available\": []\n}"
+          }
+        ],
+        "isError": true
+      }
+    },
+    {
+      "tool": "optimac_memory_pressure_check",
+      "status": "PASS",
+      "durationMs": 46.038999999999994,
+      "output": "{'content': [{'type': 'text', 'text': '{\\n  \"memoryUsedMB\": 14206,\\n  \"memoryTotalMB\": 49152,\\n  \"usedPercent\": 29,\\n  \"pressureLevel\": \"nominal\",\\n  \"swapUsedMB\": 0,\\n  \"level\": \"nominal\",\\n  \"action"
+    },
+    {
+      "tool": "optimac_maintenance_cycle",
+      "status": "SKIP",
+      "reason": "Requires sudo (passwordless not configured)",
+      "durationMs": 0
+    },
+    {
+      "tool": "optimac_config_get",
+      "status": "PASS",
+      "durationMs": 0.35300000000000004,
+      "output": "{'content': [{'type': 'text', 'text': '{\\n  \"protectedProcesses\": [\\n    \"ollama\",\\n    \"lmstudio\",\\n    \"LM Studio\",\\n    \"mlx\",\\n    \"python3\",\\n    \"python\",\\n    \"node\",\\n    \"claude\",\\n    \"openc"
+    },
+    {
+      "tool": "optimac_config_set",
+      "status": "FAIL",
+      "reason": "MCP error -32602: Input validation error: Invalid arguments for tool optimac_config_set: [\n  {\n    \"received\": \"testKey\",\n    \"code\": \"invalid_enum_value\",\n    \"options\": [\n      \"memoryWarningThreshold\",\n      \"memoryCriticalThreshold\",\n      \"autoKillAtCritical\",\n      \"maxProcessRSSMB\",\n      \"maintenanceIntervalSec\"\n    ],\n    \"path\": [\n      \"key\"\n    ],\n    \"message\": \"Invalid enum value. Expected 'memoryWarningThreshold' | 'memoryCriticalThreshold' | 'autoKillAtCritical' | 'maxProcessRSSMB' | 'maintenanceIntervalSec', received 'testKey'\"\n  },\n  {\n    \"code\": \"invalid_union\",\n    \"unionErrors\": [\n      {\n        \"issues\": [\n          {\n            \"code\": \"invalid_type\",\n            \"expected\": \"number\",\n            \"received\": \"string\",\n            \"path\": [\n              \"value\"\n            ],\n            \"message\": \"Expected number, received string\"\n          }\n        ],\n        \"name\": \"ZodError\"\n      },\n      {\n        \"issues\": [\n          {\n            \"code\": \"invalid_type\",\n            \"expected\": \"boolean\",\n            \"received\": \"string\",\n            \"path\": [\n              \"value\"\n            ],\n            \"message\": \"Expected boolean, received string\"\n          }\n        ],\n        \"name\": \"ZodError\"\n      }\n    ],\n    \"path\": [\n      \"value\"\n    ],\n    \"message\": \"Invalid input\"\n  }\n]",
+      "durationMs": 0.415,
+      "output": {
+        "content": [
+          {
+            "type": "text",
+            "text": "MCP error -32602: Input validation error: Invalid arguments for tool optimac_config_set: [\n  {\n    \"received\": \"testKey\",\n    \"code\": \"invalid_enum_value\",\n    \"options\": [\n      \"memoryWarningThreshold\",\n      \"memoryCriticalThreshold\",\n      \"autoKillAtCritical\",\n      \"maxProcessRSSMB\",\n      \"maintenanceIntervalSec\"\n    ],\n    \"path\": [\n      \"key\"\n    ],\n    \"message\": \"Invalid enum value. Expected 'memoryWarningThreshold' | 'memoryCriticalThreshold' | 'autoKillAtCritical' | 'maxProcessRSSMB' | 'maintenanceIntervalSec', received 'testKey'\"\n  },\n  {\n    \"code\": \"invalid_union\",\n    \"unionErrors\": [\n      {\n        \"issues\": [\n          {\n            \"code\": \"invalid_type\",\n            \"expected\": \"number\",\n            \"received\": \"string\",\n            \"path\": [\n              \"value\"\n            ],\n            \"message\": \"Expected number, received string\"\n          }\n        ],\n        \"name\": \"ZodError\"\n      },\n      {\n        \"issues\": [\n          {\n            \"code\": \"invalid_type\",\n            \"expected\": \"boolean\",\n            \"received\": \"string\",\n            \"path\": [\n              \"value\"\n            ],\n            \"message\": \"Expected boolean, received string\"\n          }\n        ],\n        \"name\": \"ZodError\"\n      }\n    ],\n    \"path\": [\n      \"value\"\n    ],\n    \"message\": \"Invalid input\"\n  }\n]"
+          }
+        ],
+        "isError": true
+      }
+    },
+    {
+      "tool": "optimac_config_protect_process",
+      "status": "FAIL",
+      "reason": "MCP error -32602: Input validation error: Invalid arguments for tool optimac_config_protect_process: [\n  {\n    \"code\": \"invalid_type\",\n    \"expected\": \"string\",\n    \"received\": \"undefined\",\n    \"path\": [\n      \"process_name\"\n    ],\n    \"message\": \"Required\"\n  }\n]",
+      "durationMs": 0.23800000000000002,
+      "output": {
+        "content": [
+          {
+            "type": "text",
+            "text": "MCP error -32602: Input validation error: Invalid arguments for tool optimac_config_protect_process: [\n  {\n    \"code\": \"invalid_type\",\n    \"expected\": \"string\",\n    \"received\": \"undefined\",\n    \"path\": [\n      \"process_name\"\n    ],\n    \"message\": \"Required\"\n  }\n]"
+          }
+        ],
+        "isError": true
+      }
+    },
+    {
+      "tool": "optimac_config_unprotect_process",
+      "status": "FAIL",
+      "reason": "MCP error -32602: Input validation error: Invalid arguments for tool optimac_config_unprotect_process: [\n  {\n    \"code\": \"invalid_type\",\n    \"expected\": \"string\",\n    \"received\": \"undefined\",\n    \"path\": [\n      \"process_name\"\n    ],\n    \"message\": \"Required\"\n  }\n]",
+      "durationMs": 0.17200000000000001,
+      "output": {
+        "content": [
+          {
+            "type": "text",
+            "text": "MCP error -32602: Input validation error: Invalid arguments for tool optimac_config_unprotect_process: [\n  {\n    \"code\": \"invalid_type\",\n    \"expected\": \"string\",\n    \"received\": \"undefined\",\n    \"path\": [\n      \"process_name\"\n    ],\n    \"message\": \"Required\"\n  }\n]"
+          }
+        ],
+        "isError": true
+      }
+    },
+    {
+      "tool": "optimac_config_set_port",
+      "status": "PASS",
+      "durationMs": 0.4,
+      "output": "{'content': [{'type': 'text', 'text': '{\\n  \"status\": \"updated\",\\n  \"service\": \"ollama\",\\n  \"port\": 11434,\\n  \"allPorts\": {\\n    \"ollama\": 11434,\\n    \"lmstudio\": 1234,\\n    \"mlx\": 8080\\n  }\\n}'}]}"
+    },
+    {
+      "tool": "optimac_debloat",
+      "status": "SKIP",
+      "reason": "Requires sudo (passwordless not configured)",
+      "durationMs": 0
+    },
+    {
+      "tool": "optimac_watchdog_start",
+      "status": "PASS",
+      "durationMs": 7.469,
+      "output": "{'content': [{'type': 'text', 'text': '{\\n  \"running\": true,\\n  \"intervalMs\": 21600000,\\n  \"checksPerformed\": 0,\\n  \"lastCheck\": null,\\n  \"autoActions\": 0\\n}'}]}"
+    },
+    {
+      "tool": "optimac_watchdog_stop",
+      "status": "PASS",
+      "durationMs": 0.28400000000000003,
+      "output": "{'content': [{'type': 'text', 'text': '{\\n  \"running\": false,\\n  \"intervalMs\": 21600000,\\n  \"checksPerformed\": 0,\\n  \"lastCheck\": null,\\n  \"autoActions\": 0\\n}'}]}"
+    },
+    {
+      "tool": "optimac_watchdog_status",
+      "status": "PASS",
+      "durationMs": 0.149,
+      "output": "{'content': [{'type': 'text', 'text': '{\\n  \"running\": false,\\n  \"intervalMs\": 21600000,\\n  \"checksPerformed\": 0,\\n  \"lastCheck\": null,\\n  \"autoActions\": 0\\n}'}]}"
+    },
+    {
+      "tool": "optimac_audit_read",
+      "status": "PASS",
+      "durationMs": 0.33799999999999997,
+      "output": "{'content': [{'type': 'text', 'text': '{\\n  \"totalEntries\": 2,\\n  \"file\": \"/Users/gerdsenai/.optimac/audit.jsonl\",\\n  \"entries\": [\\n    {\\n      \"timestamp\": \"2026-02-14T04:18:16.721Z\",\\n      \"tool\":"
+    }
+  ]
+}

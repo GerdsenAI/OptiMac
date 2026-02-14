@@ -104,50 +104,67 @@ echo "[6/7] Generating DMG background..."
 mkdir -p _logo
 python3 -c "
 from PIL import Image, ImageDraw, ImageFont
-import sys
+import math
 
+VERSION = '${VERSION}'
 W, H = 660, 400
-bg = Image.new('RGBA', (W, H), (30, 30, 30, 255))
+
+bg = Image.new('RGB', (W, H), (28, 28, 30))
 draw = ImageDraw.Draw(bg)
 
-# Gradient overlay (subtle dark-to-darker)
+# Clean vertical gradient
 for y in range(H):
-    alpha = int(40 * (y / H))
-    draw.line([(0, y), (W, y)], fill=(0, 0, 0, alpha))
+    t = y / H
+    v = int(32 - 10 * t)
+    draw.line([(0, y), (W, y)], fill=(v, v, v + 1))
 
-# Arrow from app icon area to Applications folder area
-# App icon center: ~165, 200  |  Applications center: ~495, 200
-arrow_y = 200
-for x in range(240, 420):
-    t = (x - 240) / 180.0
-    # Slight arc
-    y_off = int(-15 * (4 * t * (1 - t)))
-    for dy in range(-2, 3):
-        draw.point((x, arrow_y + y_off + dy), fill=(180, 180, 180, 200))
-
-# Arrowhead
-for i in range(15):
-    draw.line([(420 - i, arrow_y - i), (420 - i, arrow_y + i)],
-              fill=(180, 180, 180, 200))
-
-# Title text
+# Load system font (macOS Helvetica, with fallback)
 try:
-    font_title = ImageFont.truetype('/System/Library/Fonts/Helvetica.ttc', 22)
-    font_sub = ImageFont.truetype('/System/Library/Fonts/Helvetica.ttc', 13)
-except:
+    font_title = ImageFont.truetype('/System/Library/Fonts/Helvetica.ttc', 21)
+    font_sub = ImageFont.truetype('/System/Library/Fonts/Helvetica.ttc', 12)
+    font_ver = ImageFont.truetype('/System/Library/Fonts/Helvetica.ttc', 10)
+except Exception:
     font_title = ImageFont.load_default()
     font_sub = font_title
+    font_ver = font_title
 
-draw.text((W // 2, 45), 'GerdsenAI OptiMac', fill=(255, 255, 255, 230),
-          font=font_title, anchor='mm')
-draw.text((W // 2, 72), 'Drag to Applications to install',
-          fill=(160, 160, 160, 200), font=font_sub, anchor='mm')
+# Title centered at top (manual centering for font compatibility)
+title = 'GerdsenAI OptiMac'
+bbox = draw.textbbox((0, 0), title, font=font_title)
+tw = bbox[2] - bbox[0]
+draw.text(((W - tw) // 2, 28), title, fill=(230, 230, 235), font=font_title)
 
-# Version badge
-draw.text((W // 2, H - 25), 'v${VERSION}',
-          fill=(100, 100, 100, 150), font=font_sub, anchor='mm')
+# Subtitle centered
+sub = 'Drag to Applications to install'
+bbox = draw.textbbox((0, 0), sub, font=font_sub)
+sw = bbox[2] - bbox[0]
+draw.text(((W - sw) // 2, 55), sub, fill=(130, 130, 138), font=font_sub)
 
-bg.save('_logo/dmg_background.png')
+# Curved arrow between icon positions: app (~165,200) -> Applications (~495,200)
+arrow_y = 195
+x_start, x_end = 230, 430
+color = (115, 118, 125)
+
+for x in range(x_start, x_end):
+    t = (x - x_start) / (x_end - x_start)
+    y_off = -14 * math.sin(t * math.pi)
+    y = int(arrow_y + y_off)
+    draw.point((x, y - 1), fill=color)
+    draw.point((x, y), fill=color)
+    draw.point((x, y + 1), fill=color)
+
+# Arrowhead
+ax = x_end
+ay = arrow_y
+draw.polygon([(ax + 2, ay), (ax - 10, ay - 7), (ax - 10, ay + 7)], fill=color)
+
+# Version badge centered at bottom
+ver = 'v' + VERSION
+bbox = draw.textbbox((0, 0), ver, font=font_ver)
+vw = bbox[2] - bbox[0]
+draw.text(((W - vw) // 2, H - 24), ver, fill=(75, 75, 80), font=font_ver)
+
+bg.save('_logo/dmg_background.png', 'PNG')
 print('  -> _logo/dmg_background.png')
 " 2>&1 || echo "  (background generation skipped -- Pillow font issue)"
 
@@ -158,7 +175,8 @@ echo "[7/7] Creating DMG installer..."
 rm -rf "${DMG_STAGING}"
 mkdir -p "${DMG_STAGING}"
 cp -R "${BUILD_DIR}/${APP_NAME}.app" "${DMG_STAGING}/"
-ln -s /Applications "${DMG_STAGING}/Applications"
+# NOTE: Do NOT add Applications symlink here -- create-dmg adds its own
+# via --app-drop-link. Only the hdiutil fallback needs an explicit symlink.
 
 if command -v create-dmg &>/dev/null; then
     # ── Preferred: create-dmg (installed via brew) ──
@@ -185,6 +203,7 @@ if command -v create-dmg &>/dev/null; then
 else
     # ── Fallback: hdiutil + AppleScript styling ──
     echo "  (create-dmg not found, using hdiutil fallback)"
+    ln -sf /Applications "${DMG_STAGING}/Applications"
     TMP_DMG="/tmp/optimac_tmp.dmg"
     rm -f "$TMP_DMG" "${DMG_NAME}"
 
