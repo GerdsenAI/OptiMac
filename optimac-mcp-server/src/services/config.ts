@@ -55,6 +55,12 @@ export interface OptiMacConfig {
 
   /** Edge endpoints for edge-to-edge inference (LAN devices, other runtimes) */
   edgeEndpoints: Record<string, EdgeEndpoint>;
+
+  /** Moltbot Gateway repo path (absolute) */
+  gatewayRepoPath: string;
+
+  /** Moltbot Gateway WebSocket port */
+  gatewayPort: number;
 }
 
 export interface EdgeEndpoint {
@@ -81,6 +87,8 @@ const DEFAULT_CONFIG: OptiMacConfig = {
     "node",
     "claude",
     "openclaw",
+    "moltbot",
+    "moltbot-gateway",
     "sshd",
     "WindowServer",
     "loginwindow",
@@ -134,6 +142,9 @@ const DEFAULT_CONFIG: OptiMacConfig = {
   },
 
   edgeEndpoints: {},
+
+  gatewayRepoPath: join(homedir(), "GerdsenAI-moltbot-local"),
+  gatewayPort: 18789,
 };
 
 export function loadConfig(): OptiMacConfig {

@@ -1,6 +1,6 @@
 # OptiMac MCP Server - Command Reference
 
-Version 2.7.0 | 89 tools across 11 domains
+Version 2.7.0 | 97 tools across 12 domains
 
 All tools are accessible via Claude Desktop or Claude Code when the OptiMac MCP server is configured. Each tool returns structured JSON responses.
 
@@ -17,6 +17,7 @@ All tools are accessible via Claude Desktop or Claude Code when the OptiMac MCP 
 9. [Autonomy](#9-autonomy) (4 tools)
 10. [Security](#10-security) (7 tools)
 11. [Networking](#11-networking) (8 tools)
+12. [Gateway Management](#12-gateway-management) (8 tools)
 
 ---
 
@@ -910,3 +911,113 @@ Override with `force=true` on `optimac_model_serve` (not recommended).
 2. `optimac_sec_audit_ports` → scan for suspicious listeners
 3. `optimac_sec_audit_unsigned` → find unsigned binaries
 4. `optimac_sec_audit_auth` → recent auth failures
+
+**Manage the Moltbot gateway:**
+1. `optimac_gateway_status` → check if gateway is running
+2. `optimac_gateway_doctor` → run diagnostics
+3. `optimac_gateway_logs lines=100` → read recent logs
+4. `optimac_gateway_channels` → verify MS Teams connection
+5. `optimac_gateway_update` → pull, rebuild, restart
+
+---
+
+## 12. Gateway Management
+
+Manage the GerdsenAI Moltbot-Local gateway running on this machine. Wraps the `moltbot` CLI and launchd service management.
+
+Config keys in `~/.optimac/config.json`:
+- `gatewayRepoPath`: path to the gateway repo (default: `~/GerdsenAI-moltbot-local`)
+- `gatewayPort`: WebSocket port (default: 18789)
+
+### optimac_gateway_status
+
+Check gateway health: whether port 18789 is accepting connections, launchd service status, process info, and `moltbot status` output.
+
+**Parameters:** none
+
+**Returns:** running, port, repoExists, launchdService, moltbotStatus, pid, rssMB
+
+---
+
+### optimac_gateway_doctor
+
+Run Moltbot diagnostics to surface misconfigurations, missing credentials, and legacy issues. Equivalent to `moltbot doctor`.
+
+**Parameters:** none
+
+**Returns:** Diagnostic output with warnings and errors
+
+---
+
+### optimac_gateway_logs
+
+Read recent gateway log lines from the log file.
+
+**Parameters:**
+
+- `lines` (number, optional): Number of log lines to return (default 50, max 500)
+
+**Returns:** logFile path, line count, log content
+
+---
+
+### optimac_gateway_channels
+
+Check MS Teams channel connection status. Probes the channel to verify it's connected and responding. Equivalent to `moltbot channels status --probe`.
+
+**Parameters:** none
+
+**Returns:** Channel connection status and probe results
+
+---
+
+### optimac_gateway_local_ai
+
+Discover local AI endpoints visible to the gateway (Ollama, LM Studio, vLlama). Equivalent to `moltbot local-ai discover`.
+
+**Parameters:** none
+
+**Returns:** Discovered endpoints with ports and available models
+
+---
+
+### optimac_gateway_restart
+
+Restart the Moltbot gateway launchd daemon. Uses `launchctl kickstart` to restart the `bot.molt.gateway` service. Falls back to process kill + re-launch if the launchd service isn't registered.
+
+**Parameters:** none
+
+**Returns:** Restart method used, success status, port status
+
+---
+
+### optimac_gateway_config
+
+Get or set a Moltbot configuration value. Uses `moltbot config get/set`.
+
+**Parameters:**
+
+- `action` (string): "get" or "set"
+- `key` (string): Config key (e.g., "agent.model", "gateway.mode", "agents.defaults.maxConcurrent")
+- `value` (string, optional): Value to set (required when action="set")
+
+Common keys:
+- `agent.model` — default model (e.g., "anthropic/claude-opus-4-6")
+- `gateway.mode` — "local" or "remote"
+- `agents.defaults.maxConcurrent` — max concurrent agents
+- `agents.defaults.subagents.maxConcurrent` — max concurrent subagents
+- `tools.media.concurrency` — media processing concurrency
+
+---
+
+### optimac_gateway_update
+
+> **Note:** This is a heavy operation (30-120s). Pulls latest code, rebuilds, and optionally restarts.
+
+Pull latest code from git, run `pnpm install && pnpm build`, and restart the gateway daemon.
+
+**Parameters:**
+
+- `restart` (boolean, optional): Restart the gateway after rebuilding (default true)
+
+**Returns:** Step-by-step results (git pull, pnpm install, pnpm build, restart)

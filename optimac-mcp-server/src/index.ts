@@ -9,7 +9,7 @@
  * Transport: stdio (launched as subprocess by MCP client)
  * Config: ~/.optimac/config.json
  *
- * 89 tools across 11 domains:
+ * 97 tools across 12 domains:
  *   - System Monitoring (8): memory, processes, disk, thermal, power, overview, battery-health, io-stats
  *   - System Control (23): purge, DNS, routes, power, power-optimize, spotlight, caches, set-dns, services, enable-service, network-reset, reduce-ui, kill-process, nvram-perf-mode, login-items, eject, lock, restart-service, trash, power-profile, debloat-reenable, rebuild-spotlight, optimize-homebrew
  *   - AI Stack (10): status, ollama start/stop/models, mlx start/stop, smart swap, gpu-stats, benchmark, quantize
@@ -21,6 +21,7 @@
  *   - Memory Pressure (2): pressure check with tiered response, full maintenance cycle
  *   - Configuration (6): get/set config, protect/unprotect processes, ports, debloat presets
  *   - Autonomy (4): watchdog start/stop/status, audit log reading
+ *   - Gateway (8): status, doctor, logs, channels, local-ai, restart, config, update
  */
 
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
@@ -36,6 +37,7 @@ import { registerAutonomyTools } from "./tools/autonomy-tools.js";
 import { registerEdgeTools } from "./tools/edge-tools.js";
 import { registerNetworkTools } from "./tools/network-tools.js";
 import { registerSecurityTools } from "./tools/security-tools.js";
+import { registerGatewayTools } from "./tools/gateway-tools.js";
 import { loadConfig } from "./services/config.js";
 
 const VERSION = "2.7.0";
@@ -70,10 +72,12 @@ async function main(): Promise<void> {
   registerAutonomyTools(server);
   registerNetworkTools(server);
   registerSecurityTools(server);
+  registerGatewayTools(server);
 
   const edgeCount = Object.keys(config.edgeEndpoints).length;
   console.error(`Edge endpoints configured: ${edgeCount}`);
-  console.error("All tools registered (89 tools across 11 domains). Starting stdio transport...");
+  console.error(`Gateway repo: ${config.gatewayRepoPath} (port ${config.gatewayPort})`);
+  console.error("All tools registered (97 tools across 12 domains). Starting stdio transport...");
 
   // Connect via stdio
   const transport = new StdioServerTransport();
