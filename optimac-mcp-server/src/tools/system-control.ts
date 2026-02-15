@@ -7,7 +7,7 @@
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z } from "zod";
 import { runCommand, LONG_TIMEOUT } from "../services/shell.js";
-import { loadConfig, isProcessProtected } from "../services/config.js";
+import { loadConfig, saveConfig, isProcessProtected } from "../services/config.js";
 
 export function registerSystemControlTools(server: McpServer): void {
   // ---- PURGE MEMORY ----
@@ -953,17 +953,30 @@ efficiency — aggressive sleep, low power mode enabled.`,
       annotations: { destructiveHint: true },
     },
     async ({ profile }) => {
-      const profiles: Record<string, string> = {
-        performance: "pmset -a displaysleep 0 && pmset -a sleep 0 && pmset -a disksleep 0 && pmset -a gpuswitch 2 && pmset -a womp 1 && pmset -a autorestart 1 && pmset -a ttyskeepawake 1 && pmset -a powernap 0",
-        balanced: "pmset -a displaysleep 10 && pmset -a sleep 0 && pmset -a disksleep 10 && pmset -a gpuswitch 2 && pmset -a womp 1 && pmset -a autorestart 1 && pmset -a powernap 0",
-        efficiency: "pmset -a displaysleep 5 && pmset -a sleep 10 && pmset -a disksleep 5 && pmset -a gpuswitch 0 && pmset -a lowpowermode 1 && pmset -a powernap 0",
+      const profiles: Record<string, string[]> = {
+        performance: ["displaysleep 0", "sleep 0", "disksleep 0", "gpuswitch 2", "womp 1", "autorestart 1", "ttyskeepawake 1", "powernap 0"],
+        balanced: ["displaysleep 10", "sleep 0", "disksleep 10", "gpuswitch 2", "womp 1", "autorestart 1", "powernap 0"],
+        efficiency: ["displaysleep 5", "sleep 10", "disksleep 5", "gpuswitch 0", "lowpowermode 1", "powernap 0"],
       };
 
-      const result = await runCommand("sudo", ["-n", "sh", "-c", profiles[profile]], { timeout: 15000 });
-      if (result.exitCode !== 0) {
-        return { content: [{ type: "text", text: `Failed to apply ${profile} profile (may need sudo): ${result.stderr}` }], isError: true };
+      const results: Record<string, string> = {};
+      for (const setting of profiles[profile]) {
+        const [key, val] = setting.split(" ");
+        const r = await runCommand("sudo", ["pmset", "-a", key, val], { shell: true });
+        results[key] = r.exitCode === 0 ? val : `FAILED: ${r.stderr}`;
       }
-      return { content: [{ type: "text", text: `${profile} power profile applied successfully` }] };
+
+      const failed = Object.values(results).some((v) => v.startsWith("FAILED"));
+      return {
+        content: [{
+          type: "text",
+          text: JSON.stringify({
+            status: failed ? "partial_failure" : "success",
+            profile,
+            settings: results,
+          }, null, 2),
+        }],
+      };
     }
   );
 
@@ -986,22 +999,29 @@ efficiency — aggressive sleep, low power mode enabled.`,
       const uidResult = await runCommand("id", ["-u"]);
       const uid = uidResult.stdout.trim() || "501";
 
-      const cmds = disabled.map((svc: string) => `launchctl enable user/${uid}/${svc}`).join(" && ");
-      const result = await runCommand("sudo", ["-n", "sh", "-c", cmds], { timeout: 30000 });
-
-      if (result.exitCode !== 0) {
-        return { content: [{ type: "text", text: `Failed (may need sudo): ${result.stderr}` }], isError: true };
+      const results: Record<string, string> = {};
+      for (const svc of disabled) {
+        const r = await runCommand("sudo", ["launchctl", "enable", `user/${uid}/${svc}`], { shell: true, timeout: 10000 });
+        results[svc] = r.exitCode === 0 ? "re-enabled" : `FAILED: ${r.stderr}`;
       }
 
-      // Clear the disabled services in config
-      config.disabledServices = [];
-      const configPath = `${process.env.HOME}/.optimac/config.json`;
-      try {
-        const fs = await import("fs");
-        fs.writeFileSync(configPath, JSON.stringify(config, null, 2));
-      } catch { /* config save is best-effort */ }
+      // Only clear successfully re-enabled services; keep failed ones for retry
+      const stillFailed = disabled.filter((svc) => results[svc].startsWith("FAILED"));
+      config.disabledServices = stillFailed;
+      saveConfig(config);
 
-      return { content: [{ type: "text", text: `Re-enabled ${disabled.length} services successfully` }] };
+      const successCount = disabled.length - stillFailed.length;
+      return {
+        content: [{
+          type: "text",
+          text: JSON.stringify({
+            status: stillFailed.length === 0 ? "success" : "partial_failure",
+            reEnabled: successCount,
+            failed: stillFailed.length,
+            details: results,
+          }, null, 2),
+        }],
+      };
     }
   );
 
@@ -1015,7 +1035,7 @@ efficiency — aggressive sleep, low power mode enabled.`,
       annotations: { destructiveHint: true },
     },
     async () => {
-      const result = await runCommand("sudo", ["-n", "mdutil", "-E", "/"], { timeout: 15000 });
+      const result = await runCommand("sudo", ["mdutil", "-E", "/"], { shell: true, timeout: 15000 });
       if (result.exitCode !== 0) {
         return { content: [{ type: "text", text: `Failed (may need sudo): ${result.stderr}` }], isError: true };
       }
@@ -1033,13 +1053,15 @@ efficiency — aggressive sleep, low power mode enabled.`,
       annotations: { destructiveHint: true },
     },
     async () => {
-      const whichBrew = await runCommand("which", ["brew"], { timeout: 5000 });
+      // brew may be in /opt/homebrew/bin (Apple Silicon) or /usr/local/bin (Intel)
+      const whichBrew = await runCommand("which", ["brew"], { shell: true, timeout: 5000 });
       if (whichBrew.exitCode !== 0) {
         return { content: [{ type: "text", text: "Homebrew is not installed. Install from https://brew.sh" }], isError: true };
       }
 
-      const cleanup = await runCommand("brew", ["cleanup", "--prune=7"], { timeout: 120000 });
-      const autoremove = await runCommand("brew", ["autoremove"], { timeout: 60000 });
+      const brewPath = whichBrew.stdout.trim() || "brew";
+      const cleanup = await runCommand(brewPath, ["cleanup", "--prune=7"], { timeout: 120000 });
+      const autoremove = await runCommand(brewPath, ["autoremove"], { timeout: 60000 });
 
       const body = [
         "── Cleanup ──",

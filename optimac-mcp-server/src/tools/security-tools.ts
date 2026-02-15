@@ -52,16 +52,37 @@ export function registerSecurityTools(server: McpServer): void {
         "optimac_sec_firewall",
         {
             title: "Firewall Control",
-            description: "Enable or disable the macOS Application Firewall.",
+            description: "Get status, enable, or disable the macOS Application Firewall. Status returns global state, stealth mode, and block-all mode.",
             inputSchema: {
-                action: z.enum(["on", "off"]).describe("Turn firewall on or off"),
+                action: z.enum(["status", "on", "off"]).describe("Get firewall status or toggle on/off"),
             },
             annotations: { destructiveHint: true },
         },
         async ({ action }) => {
+            const fwPath = "/usr/libexec/ApplicationFirewall/socketfilterfw";
+
+            if (action === "status") {
+                const [state, stealth, blockall] = await Promise.all([
+                    runCommand(fwPath, ["--getglobalstate"]),
+                    runCommand(fwPath, ["--getstealthmode"]),
+                    runCommand(fwPath, ["--getblockall"]),
+                ]);
+
+                return {
+                    content: [{
+                        type: "text",
+                        text: JSON.stringify({
+                            globalState: state.stdout.trim() || state.stderr,
+                            stealthMode: stealth.stdout.trim() || stealth.stderr,
+                            blockAll: blockall.stdout.trim() || blockall.stderr,
+                        }, null, 2),
+                    }],
+                };
+            }
+
             const result = await runCommand(
                 "sudo",
-                ["/usr/libexec/ApplicationFirewall/socketfilterfw", "--setglobalstate", action],
+                [fwPath, "--setglobalstate", action],
                 { shell: true }
             );
 

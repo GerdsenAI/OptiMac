@@ -246,13 +246,20 @@ export function registerNetworkTools(server: McpServer): void {
 
             return new Promise((resolve) => {
                 const socket = dgram.createSocket("udp4");
-                socket.send(buffer, 0, buffer.length, 9, "255.255.255.255", (err) => {
+                socket.once("error", (err) => {
                     socket.close();
-                    if (err) {
-                        resolve({ content: [{ type: "text", text: `Failed to send WoL: ${err.message}` }], isError: true });
-                    } else {
-                        resolve({ content: [{ type: "text", text: `Magic packet sent to ${mac}` }] });
-                    }
+                    resolve({ content: [{ type: "text", text: `Failed to send WoL: ${err.message}` }], isError: true });
+                });
+                socket.bind(() => {
+                    socket.setBroadcast(true);
+                    socket.send(buffer, 0, buffer.length, 9, "255.255.255.255", (err) => {
+                        socket.close();
+                        if (err) {
+                            resolve({ content: [{ type: "text", text: `Failed to send WoL: ${err.message}` }], isError: true });
+                        } else {
+                            resolve({ content: [{ type: "text", text: `Magic packet sent to ${mac}` }] });
+                        }
+                    });
                 });
             });
         }
