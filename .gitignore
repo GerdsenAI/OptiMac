@@ -36,3 +36,4 @@ tests/scratch_test.txt.bak
 # Project-specific
 _logo/OptiMac.iconset/
 .docs/OptiMac-Concierge.md
+.DS_Store
