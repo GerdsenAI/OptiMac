@@ -821,4 +821,235 @@ Actions:
       };
     }
   );
+
+  // ---- LIST LOGIN ITEMS ----
+  server.registerTool(
+    "optimac_sys_login_items",
+    {
+      title: "List Login Items",
+      description: "List all applications and items configured to launch at login.",
+      inputSchema: {},
+    },
+    async () => {
+      const script = 'tell application "System Events" to get the name of every login item';
+      const result = await runCommand("osascript", ["-e", script]);
+
+      const items = result.stdout.split(",").map((s) => s.trim()).filter((s) => s);
+
+      return {
+        content: [{
+          type: "text",
+          text: JSON.stringify({
+            count: items.length,
+            items,
+          }, null, 2),
+        }],
+      };
+    }
+  );
+
+  // ---- EJECT DRIVES ----
+  server.registerTool(
+    "optimac_sys_eject",
+    {
+      title: "Eject All Drives",
+      description: "Unmount and eject all external drives and volumes.",
+      inputSchema: {},
+      annotations: { destructiveHint: true },
+    },
+    async () => {
+      const script = 'tell application "Finder" to eject (every disk whose ejectable is true)';
+      const result = await runCommand("osascript", ["-e", script]);
+
+      return {
+        content: [{
+          type: "text",
+          text: result.exitCode === 0
+            ? "All ejectable drives ejected"
+            : `Failed to eject: ${result.stderr}`,
+        }],
+      };
+    }
+  );
+
+  // ---- LOCK SCREEN ----
+  server.registerTool(
+    "optimac_sys_lock",
+    {
+      title: "Lock Screen",
+      description: "Immediately lock the screen (sleep display).",
+      inputSchema: {},
+    },
+    async () => {
+      const result = await runCommand("pmset", ["displaysleepnow"]);
+      return {
+        content: [{
+          type: "text",
+          text: result.exitCode === 0 ? "Screen locked" : `Failed: ${result.stderr}`,
+        }],
+      };
+    }
+  );
+
+  // ---- RESTART SYSTEM SERVICES ----
+  server.registerTool(
+    "optimac_sys_restart_service",
+    {
+      title: "Restart System Service",
+      description: "Restart a key system service (Finder, Dock, SystemUIServer).",
+      inputSchema: {
+        service: z.enum(["Finder", "Dock", "SystemUIServer"]).describe("Service to restart"),
+      },
+      annotations: { destructiveHint: true },
+    },
+    async ({ service }) => {
+      const result = await runCommand("killall", [service]);
+      return {
+        content: [{
+          type: "text",
+          text: result.exitCode === 0 ? `${service} restarted` : `Failed: ${result.stderr}`,
+        }],
+      };
+    }
+  );
+
+  // ---- EMPTY TRASH ----
+  server.registerTool(
+    "optimac_sys_trash",
+    {
+      title: "Empty Trash",
+      description: "Permanently empty the Trash. CAUTION: This operation cannot be undone.",
+      inputSchema: {},
+      annotations: { destructiveHint: true },
+    },
+    async () => {
+      const script = 'tell application "Finder" to empty trash';
+      const result = await runCommand("osascript", ["-e", script]);
+
+      return {
+        content: [{
+          type: "text",
+          text: result.exitCode === 0
+            ? "Trash emptied successfully"
+            : `Failed (User may need to approve Finder interaction): ${result.stderr}`,
+        }],
+      };
+    }
+  );
+
+  // ---- APPLY POWER PROFILE ----
+  server.registerTool(
+    "optimac_power_profile",
+    {
+      title: "Apply Power Profile",
+      description: `Apply a predefined power profile via pmset.
+
+performance — AI server mode: no sleep, Wake-on-LAN, auto-restart.
+balanced — moderate sleep, WoL on, auto-restart, no Power Nap.
+efficiency — aggressive sleep, low power mode enabled.`,
+      inputSchema: {
+        profile: z.enum(["performance", "balanced", "efficiency"]).describe("Power profile to apply"),
+      },
+      annotations: { destructiveHint: true },
+    },
+    async ({ profile }) => {
+      const profiles: Record<string, string> = {
+        performance: "pmset -a displaysleep 0 && pmset -a sleep 0 && pmset -a disksleep 0 && pmset -a gpuswitch 2 && pmset -a womp 1 && pmset -a autorestart 1 && pmset -a ttyskeepawake 1 && pmset -a powernap 0",
+        balanced: "pmset -a displaysleep 10 && pmset -a sleep 0 && pmset -a disksleep 10 && pmset -a gpuswitch 2 && pmset -a womp 1 && pmset -a autorestart 1 && pmset -a powernap 0",
+        efficiency: "pmset -a displaysleep 5 && pmset -a sleep 10 && pmset -a disksleep 5 && pmset -a gpuswitch 0 && pmset -a lowpowermode 1 && pmset -a powernap 0",
+      };
+
+      const result = await runCommand("sudo", ["-n", "sh", "-c", profiles[profile]], { timeout: 15000 });
+      if (result.exitCode !== 0) {
+        return { content: [{ type: "text", text: `Failed to apply ${profile} profile (may need sudo): ${result.stderr}` }], isError: true };
+      }
+      return { content: [{ type: "text", text: `${profile} power profile applied successfully` }] };
+    }
+  );
+
+  // ---- DEBLOAT RE-ENABLE ----
+  server.registerTool(
+    "optimac_debloat_reenable",
+    {
+      title: "Re-enable Disabled Services",
+      description: "Re-enable all previously disabled macOS services from debloat presets.",
+      inputSchema: {},
+      annotations: { destructiveHint: true },
+    },
+    async () => {
+      const config = loadConfig();
+      const disabled = config.disabledServices || [];
+      if (disabled.length === 0) {
+        return { content: [{ type: "text", text: "No disabled services found. Nothing to re-enable." }] };
+      }
+
+      const uidResult = await runCommand("id", ["-u"]);
+      const uid = uidResult.stdout.trim() || "501";
+
+      const cmds = disabled.map((svc: string) => `launchctl enable user/${uid}/${svc}`).join(" && ");
+      const result = await runCommand("sudo", ["-n", "sh", "-c", cmds], { timeout: 30000 });
+
+      if (result.exitCode !== 0) {
+        return { content: [{ type: "text", text: `Failed (may need sudo): ${result.stderr}` }], isError: true };
+      }
+
+      // Clear the disabled services in config
+      config.disabledServices = [];
+      const configPath = `${process.env.HOME}/.optimac/config.json`;
+      try {
+        const fs = await import("fs");
+        fs.writeFileSync(configPath, JSON.stringify(config, null, 2));
+      } catch { /* config save is best-effort */ }
+
+      return { content: [{ type: "text", text: `Re-enabled ${disabled.length} services successfully` }] };
+    }
+  );
+
+  // ---- REBUILD SPOTLIGHT ----
+  server.registerTool(
+    "optimac_rebuild_spotlight",
+    {
+      title: "Rebuild Spotlight Index",
+      description: "Erase and rebuild Spotlight search index. Indexing may take 30-60 minutes.",
+      inputSchema: {},
+      annotations: { destructiveHint: true },
+    },
+    async () => {
+      const result = await runCommand("sudo", ["-n", "mdutil", "-E", "/"], { timeout: 15000 });
+      if (result.exitCode !== 0) {
+        return { content: [{ type: "text", text: `Failed (may need sudo): ${result.stderr}` }], isError: true };
+      }
+      return { content: [{ type: "text", text: `Spotlight index rebuild started. May take 30-60 minutes.\n${result.stdout}` }] };
+    }
+  );
+
+  // ---- OPTIMIZE HOMEBREW ----
+  server.registerTool(
+    "optimac_optimize_homebrew",
+    {
+      title: "Optimize Homebrew",
+      description: "Run Homebrew cleanup (prune 7 days) and autoremove unused dependencies.",
+      inputSchema: {},
+      annotations: { destructiveHint: true },
+    },
+    async () => {
+      const whichBrew = await runCommand("which", ["brew"], { timeout: 5000 });
+      if (whichBrew.exitCode !== 0) {
+        return { content: [{ type: "text", text: "Homebrew is not installed. Install from https://brew.sh" }], isError: true };
+      }
+
+      const cleanup = await runCommand("brew", ["cleanup", "--prune=7"], { timeout: 120000 });
+      const autoremove = await runCommand("brew", ["autoremove"], { timeout: 60000 });
+
+      const body = [
+        "── Cleanup ──",
+        cleanup.stdout || "(nothing to clean)",
+        "",
+        "── Autoremove ──",
+        autoremove.stdout || "(nothing to remove)",
+      ].join("\n");
+
+      return { content: [{ type: "text", text: body }] };
+    }
+  );
 }

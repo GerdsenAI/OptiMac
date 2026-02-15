@@ -9,10 +9,12 @@
  * Transport: stdio (launched as subprocess by MCP client)
  * Config: ~/.optimac/config.json
  *
- * 61 tools across 9 domains:
- *   - System Monitoring (6): memory, processes, disk, thermal, power, overview
- *   - System Control (14): purge, DNS, routes, power, power-optimize, spotlight, caches, set-dns, services, enable-service, network-reset, reduce-ui, kill-process, nvram-perf-mode
- *   - AI Stack (7): status, ollama start/stop/models, mlx start/stop, smart swap
+ * 89 tools across 11 domains:
+ *   - System Monitoring (8): memory, processes, disk, thermal, power, overview, battery-health, io-stats
+ *   - System Control (23): purge, DNS, routes, power, power-optimize, spotlight, caches, set-dns, services, enable-service, network-reset, reduce-ui, kill-process, nvram-perf-mode, login-items, eject, lock, restart-service, trash, power-profile, debloat-reenable, rebuild-spotlight, optimize-homebrew
+ *   - AI Stack (10): status, ollama start/stop/models, mlx start/stop, smart swap, gpu-stats, benchmark, quantize
+ *   - Network Tools (7): connections, info, ping, speedtest, wifi, bluetooth, wol
+ *   - Security Tools (7): status, firewall, port-audit, malware-audit, auth-audit, unsigned-processes, connection-audit
  *   - Model Management (9): browse local models, ollama available, serve/load, unload, running models, model dir get/set, RAM check, chat/inference
  *   - Model Tasks (9): bidirectional AI bridge -- task delegation, code review, file generation, file editing, summarization, git commit, cloud escalation, edge escalation, smart 3-tier routing
  *   - Edge-to-Edge (4): add/remove/list/test edge endpoints for LAN inference
@@ -32,9 +34,11 @@ import { registerModelManagementTools } from "./tools/model-management.js";
 import { registerModelTaskTools } from "./tools/model-tasks.js";
 import { registerAutonomyTools } from "./tools/autonomy-tools.js";
 import { registerEdgeTools } from "./tools/edge-tools.js";
+import { registerNetworkTools } from "./tools/network-tools.js";
+import { registerSecurityTools } from "./tools/security-tools.js";
 import { loadConfig } from "./services/config.js";
 
-const VERSION = "2.5.2";
+const VERSION = "2.7.0";
 
 async function main(): Promise<void> {
   // Initialize config on first run
@@ -64,10 +68,12 @@ async function main(): Promise<void> {
   registerModelTaskTools(server);
   registerEdgeTools(server);
   registerAutonomyTools(server);
+  registerNetworkTools(server);
+  registerSecurityTools(server);
 
   const edgeCount = Object.keys(config.edgeEndpoints).length;
   console.error(`Edge endpoints configured: ${edgeCount}`);
-  console.error("All tools registered (61 tools across 9 domains). Starting stdio transport...");
+  console.error("All tools registered (89 tools across 11 domains). Starting stdio transport...");
 
   // Connect via stdio
   const transport = new StdioServerTransport();

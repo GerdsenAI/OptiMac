@@ -499,4 +499,136 @@ Args:
       };
     }
   );
+
+  // ---- GPU STATISTICS ----
+  server.registerTool(
+    "optimac_gpu_stats",
+    {
+      title: "GPU Statistics",
+      description: "Get detailed GPU power, frequency, and utilization metrics using powermetrics.",
+      inputSchema: {},
+      annotations: {
+        readOnlyHint: true,
+        destructiveHint: false, // Reading metrics isn't destructive
+        idempotentHint: true,
+        openWorldHint: false,
+      },
+    },
+    async () => {
+      // powermetrics requires sudo
+      const result = await runCommand(
+        "sudo",
+        ["powermetrics", "--samplers", "gpu_power", "-i", "1000", "-n", "1"],
+        { shell: true }
+      );
+
+      if (result.exitCode !== 0) {
+        return {
+          content: [{
+            type: "text",
+            text: `Error: ${result.stderr}. Ensure passwordless sudo is configured for 'powermetrics'.`,
+          }],
+          isError: true,
+        };
+      }
+
+      // Parse output to find GPU relevant lines
+      const lines = result.stdout.split("\n");
+      const gpuLines = lines.filter((l) => {
+        const lower = l.toLowerCase();
+        return lower.includes("gpu") || lower.includes("ane") || lower.includes("power") || lower.includes("freq");
+      }).slice(0, 20); // cap output
+
+      return {
+        content: [{
+          type: "text",
+          text: gpuLines.join("\n") || "No GPU metrics found in output.",
+        }],
+      };
+    }
+  );
+
+  // ---- BENCHMARK MODEL ----
+  server.registerTool(
+    "optimac_model_benchmark",
+    {
+      title: "Benchmark Model",
+      description: "Run a quick inference benchmark on a model to measure tokens per second.",
+      inputSchema: {
+        model: z.string().describe("Model name (e.g. llama3.2:3b)"),
+        prompt: z.string().default("Explain quantum computing in exactly 100 words.").describe("Prompt to use for benchmarking"),
+      },
+    },
+    async ({ model, prompt }) => {
+      const start = Date.now();
+      const result = await runCommand("ollama", ["run", model, prompt], { timeout: 120000 });
+      const elapsed = (Date.now() - start) / 1000;
+
+      if (result.exitCode !== 0) {
+        return {
+          content: [{
+            type: "text",
+            text: `Benchmark failed: ${result.stderr}`,
+          }],
+          isError: true,
+        };
+      }
+
+      const output = result.stdout;
+      const wordCount = output.split(/\s+/).length;
+      const content = output;
+      // Rough token estimate: 1.3 tokens/word
+      const tokenCount = Math.round(wordCount * 1.3);
+      const tps = elapsed > 0 ? (tokenCount / elapsed).toFixed(2) : "0";
+
+      return {
+        content: [{
+          type: "text",
+          text: JSON.stringify({
+            model,
+            elapsedSeconds: elapsed.toFixed(2),
+            estimatedTokens: tokenCount,
+            tokensPerSecond: tps,
+            outputSnippet: content.substring(0, 200) + "...",
+          }, null, 2),
+        }],
+      };
+    }
+  );
+
+  // ---- MLX QUANTIZE ----
+  server.registerTool(
+    "optimac_mlx_quantize",
+    {
+      title: "MLX Quantize Model",
+      description: "Convert a HuggingFace model to MLX format with 4-bit quantization.",
+      inputSchema: {
+        model: z.string().describe("HuggingFace model ID (e.g. meta-llama/Llama-3.2-3B-Instruct)"),
+      },
+    },
+    async ({ model }) => {
+      const result = await runCommand(
+        "python3",
+        ["-m", "mlx_lm.convert", "--hf-path", model, "-q"],
+        { timeout: 1800000 } // 30 mins
+      );
+
+      if (result.exitCode !== 0) {
+        return {
+          content: [{
+            type: "text",
+            text: `Quantization failed: ${result.stderr}`,
+          }],
+          isError: true,
+        };
+      }
+
+      return {
+        content: [{
+          type: "text",
+          text: `Quantization complete for ${model}.\nOutput:\n${result.stdout.substring(0, 1000)}...`,
+        }],
+      };
+    }
+  );
 }

@@ -294,4 +294,58 @@ This is the "dashboard" tool. Use it for a quick health check before making deci
       return { content: [{ type: "text", text: JSON.stringify(overview, null, 2) }] };
     }
   );
+
+  // ---- BATTERY HEALTH ----
+  server.registerTool(
+    "optimac_battery_health",
+    {
+      title: "Battery Health",
+      description: "Get detailed battery/power information including cycle count, condition, charge, and wattage.",
+      inputSchema: {},
+      annotations: { readOnlyHint: true, destructiveHint: false, idempotentHint: true, openWorldHint: false },
+    },
+    async () => {
+      const result = await runCommand("system_profiler", ["SPPowerDataType"], { timeout: 15000 });
+      if (result.exitCode !== 0) {
+        return { content: [{ type: "text", text: `Failed to read battery data: ${result.stderr}` }], isError: true };
+      }
+
+      const keys = [
+        "charge remaining", "fully charged", "charging", "cycle count",
+        "condition", "maximum capacity", "voltage", "amperage", "wattage",
+        "connected", "ac charger",
+      ];
+      const lines = result.stdout.split("\n")
+        .filter((l) => keys.some((k) => l.toLowerCase().includes(k)))
+        .map((l) => l.trim());
+
+      return {
+        content: [{
+          type: "text",
+          text: JSON.stringify({ battery: lines.length > 0 ? lines : ["No battery data found (Mac Mini/desktop?)"] }, null, 2),
+        }],
+      };
+    }
+  );
+
+  // ---- I/O STATISTICS ----
+  server.registerTool(
+    "optimac_io_stats",
+    {
+      title: "I/O Statistics",
+      description: "Get disk I/O statistics including read/write bytes and operations.",
+      inputSchema: {},
+      annotations: { readOnlyHint: true, destructiveHint: false, idempotentHint: true, openWorldHint: false },
+    },
+    async () => {
+      const result = await runCommand("iostat", ["-d", "-c", "2"], { timeout: 10000 });
+      if (result.exitCode !== 0) {
+        return { content: [{ type: "text", text: `Failed: ${result.stderr}` }], isError: true };
+      }
+
+      return {
+        content: [{ type: "text", text: result.stdout.trim() }],
+      };
+    }
+  );
 }

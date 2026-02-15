@@ -38,6 +38,8 @@ TOOL_DEFINITIONS = {
         {"name": "optimac_thermal_status", "safe": True, "sudo": True, "args": {}},
         {"name": "optimac_power_settings", "safe": True, "sudo": False, "args": {}},
         {"name": "optimac_system_overview", "safe": True, "sudo": False, "args": {}},
+        {"name": "optimac_battery_health", "safe": True, "sudo": False, "args": {}},
+        {"name": "optimac_io_stats", "safe": True, "sudo": False, "args": {}},
     ],
     # ── SYSTEM CONTROL ────────────────────────────────────────────────
     "system_control": [
@@ -86,6 +88,25 @@ TOOL_DEFINITIONS = {
             "sudo": True,
             "args": {"enable": True},
         },
+        {"name": "optimac_sys_login_items", "safe": True, "sudo": False, "args": {}},
+        {"name": "optimac_sys_eject", "safe": False, "sudo": False, "args": {}},
+        {"name": "optimac_sys_lock", "safe": False, "sudo": False, "args": {}},
+        {
+            "name": "optimac_sys_restart_service",
+            "safe": False,
+            "sudo": False,
+            "args": {"service": "Dock"},
+        },
+        {"name": "optimac_sys_trash", "safe": False, "sudo": False, "args": {}},
+        {
+            "name": "optimac_power_profile",
+            "safe": False,
+            "sudo": True,
+            "args": {"profile": "balanced"},
+        },
+        {"name": "optimac_debloat_reenable", "safe": False, "sudo": True, "args": {}},
+        {"name": "optimac_rebuild_spotlight", "safe": False, "sudo": True, "args": {}},
+        {"name": "optimac_optimize_homebrew", "safe": False, "sudo": False, "args": {}},
     ],
     # ── AI STACK ──────────────────────────────────────────────────────
     "ai_stack": [
@@ -111,6 +132,19 @@ TOOL_DEFINITIONS = {
             "safe": False,
             "sudo": False,
             "args": {"runtime": "ollama", "model": "test"},
+        },
+        {"name": "optimac_gpu_stats", "safe": True, "sudo": True, "args": {}},
+        {
+            "name": "optimac_model_benchmark",
+            "safe": False,
+            "sudo": False,
+            "args": {"model": "llama3.2", "prompt": "test"},
+        },
+        {
+            "name": "optimac_mlx_quantize",
+            "safe": False,
+            "sudo": False,
+            "args": {"model": "test-model"},
         },
     ],
     # ── MODEL MANAGEMENT ──────────────────────────────────────────────
@@ -331,7 +365,66 @@ TOOL_DEFINITIONS = {
         {"name": "optimac_watchdog_start", "safe": False, "sudo": False, "args": {}},
         {"name": "optimac_watchdog_stop", "safe": False, "sudo": False, "args": {}},
         {"name": "optimac_watchdog_status", "safe": True, "sudo": False, "args": {}},
-        {"name": "optimac_audit_read", "safe": True, "sudo": False, "args": {}},
+    ],
+    # ── NETWORK TOOLS (NEW) ───────────────────────────────────────────
+    "network_tools": [
+        {
+            "name": "optimac_net_connections",
+            "safe": True,
+            "sudo": False,
+            "args": {"filter": "listen", "limit": 5},
+        },
+        {"name": "optimac_net_info", "safe": True, "sudo": False, "args": {}},
+        {
+            "name": "optimac_net_ping",
+            "safe": False,
+            "sudo": False,
+            "args": {"host": "127.0.0.1", "count": 1},
+        },
+        {"name": "optimac_net_speedtest", "safe": False, "sudo": False, "args": {}},
+        {
+            "name": "optimac_net_wifi",
+            "safe": False,
+            "sudo": False,
+            "args": {"action": "status"},
+        },
+        {
+            "name": "optimac_net_bluetooth",
+            "safe": False,
+            "sudo": False,
+            "args": {"action": "status"},
+        },
+        {
+            "name": "optimac_net_wol",
+            "safe": False,
+            "sudo": False,
+            "args": {"mac": "00:11:22:33:44:55"},
+        },
+    ],
+    # ── SECURITY TOOLS (NEW) ──────────────────────────────────────────
+    "security_tools": [
+        {"name": "optimac_sec_status", "safe": True, "sudo": False, "args": {}},
+        {
+            "name": "optimac_sec_firewall",
+            "safe": False,
+            "sudo": True,
+            "args": {"action": "status"},
+        },
+        {"name": "optimac_sec_audit_ports", "safe": True, "sudo": False, "args": {}},
+        {"name": "optimac_sec_audit_malware", "safe": True, "sudo": False, "args": {}},
+        {"name": "optimac_sec_audit_auth", "safe": True, "sudo": True, "args": {}},
+        {
+            "name": "optimac_sec_audit_unsigned",
+            "safe": True,
+            "sudo": False,
+            "args": {"limit": 10},
+        },
+        {
+            "name": "optimac_sec_audit_connections",
+            "safe": True,
+            "sudo": False,
+            "args": {},
+        },
     ],
 }
 
