@@ -553,46 +553,84 @@ Args:
     "optimac_model_benchmark",
     {
       title: "Benchmark Model",
-      description: "Run a quick inference benchmark on a model to measure tokens per second.",
+      description: "Run a quick inference benchmark on a model to measure tokens per second. Uses the Ollama HTTP API for accurate timing.",
       inputSchema: {
-        model: z.string().describe("Model name (e.g. llama3.2:3b)"),
+        model: z.string().describe("Model name (e.g. llama3:latest)"),
         prompt: z.string().default("Explain quantum computing in exactly 100 words.").describe("Prompt to use for benchmarking"),
       },
     },
     async ({ model, prompt }) => {
-      const start = Date.now();
-      const result = await runCommand("ollama", ["run", model, prompt], { timeout: 120000 });
-      const elapsed = (Date.now() - start) / 1000;
+      const config = loadConfig();
+      const ollamaPort = config.aiStackPorts?.ollama ?? 11434;
 
-      if (result.exitCode !== 0) {
+      // Use Ollama HTTP API (non-streaming) — returns exact token counts
+      const start = Date.now();
+      try {
+        const response = await fetch(`http://localhost:${ollamaPort}/api/generate`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ model, prompt, stream: false }),
+          signal: AbortSignal.timeout(120000),
+        });
+
+        const elapsed = (Date.now() - start) / 1000;
+
+        if (!response.ok) {
+          const errText = await response.text();
+          return {
+            content: [{ type: "text", text: `Benchmark failed (HTTP ${response.status}): ${errText}` }],
+            isError: true,
+          };
+        }
+
+        const data = await response.json() as {
+          response: string;
+          total_duration?: number;
+          load_duration?: number;
+          prompt_eval_count?: number;
+          prompt_eval_duration?: number;
+          eval_count?: number;
+          eval_duration?: number;
+        };
+
+        // Ollama returns durations in nanoseconds
+        const totalDurS = data.total_duration ? data.total_duration / 1e9 : elapsed;
+        const promptDurS = data.prompt_eval_duration ? data.prompt_eval_duration / 1e9 : 0;
+        const evalDurS = data.eval_duration ? data.eval_duration / 1e9 : 0;
+        const loadDurS = data.load_duration ? data.load_duration / 1e9 : 0;
+        const evalTokens = data.eval_count ?? 0;
+        const promptTokens = data.prompt_eval_count ?? 0;
+        const evalTPS = evalDurS > 0 ? (evalTokens / evalDurS).toFixed(2) : "N/A";
+        const promptTPS = promptDurS > 0 ? (promptTokens / promptDurS).toFixed(2) : "N/A";
+
         return {
           content: [{
             type: "text",
-            text: `Benchmark failed: ${result.stderr}`,
+            text: JSON.stringify({
+              model,
+              totalDurationSeconds: totalDurS.toFixed(2),
+              modelLoadSeconds: loadDurS.toFixed(2),
+              promptEval: {
+                tokens: promptTokens,
+                durationSeconds: promptDurS.toFixed(2),
+                tokensPerSecond: promptTPS,
+              },
+              generation: {
+                tokens: evalTokens,
+                durationSeconds: evalDurS.toFixed(2),
+                tokensPerSecond: evalTPS,
+              },
+              outputSnippet: (data.response ?? "").substring(0, 300),
+            }, null, 2),
           }],
+        };
+      } catch (err: unknown) {
+        const msg = err instanceof Error ? err.message : String(err);
+        return {
+          content: [{ type: "text", text: `Benchmark failed: ${msg}. Is Ollama running on port ${ollamaPort}?` }],
           isError: true,
         };
       }
-
-      const output = result.stdout;
-      const wordCount = output.split(/\s+/).length;
-      const content = output;
-      // Rough token estimate: 1.3 tokens/word
-      const tokenCount = Math.round(wordCount * 1.3);
-      const tps = elapsed > 0 ? (tokenCount / elapsed).toFixed(2) : "0";
-
-      return {
-        content: [{
-          type: "text",
-          text: JSON.stringify({
-            model,
-            elapsedSeconds: elapsed.toFixed(2),
-            estimatedTokens: tokenCount,
-            tokensPerSecond: tps,
-            outputSnippet: content.substring(0, 200) + "...",
-          }, null, 2),
-        }],
-      };
     }
   );
 

@@ -211,11 +211,12 @@ export function registerSecurityTools(server: McpServer): void {
             inputSchema: {},
         },
         async () => {
-            // log show --style compact --predicate 'eventMessage contains "authentication" OR eventMessage contains "failed"' --last 1h
-            const predicate = 'eventMessage contains "authentication" OR eventMessage contains "failed" OR eventMessage contains "invalid"';
+            // Narrower predicate to target actual auth failures (not generic "invalid" noise)
+            // Use sh -c for proper quoting of the NSPredicate string
+            const cmd = `log show --style compact --predicate 'eventMessage contains "authentication failed" OR eventMessage contains "login failed" OR eventMessage contains "Authentication failed" OR eventMessage contains "unauthorized"' --last 15m`;
             const result = await runCommand(
-                "log",
-                ["show", "--style", "compact", "--predicate", predicate, "--last", "1h"],
+                "sh",
+                ["-c", cmd],
                 { timeout: 30000 }
             );
 

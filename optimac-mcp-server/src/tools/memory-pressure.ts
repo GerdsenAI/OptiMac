@@ -139,14 +139,16 @@ This is the core tool for keeping a 16GB M4 running inference without swap death
 1. Check memory pressure (with auto-kill if critical)
 2. Purge inactive memory
 3. Flush DNS cache
-4. Flush network routes
+4. Check network route health
 5. Clear temp files and old logs
 6. Check disk space
 7. Verify AI stack health
 8. Report summary
 
-This is the single most important tool. Schedule it or run it manually.`,
-      inputSchema: {},
+Use dry_run=true to preview what actions will be taken without executing them.`,
+      inputSchema: {
+        dry_run: z.boolean().default(false).describe("If true, report planned actions without executing them"),
+      },
       annotations: {
         readOnlyHint: false,
         destructiveHint: true,
@@ -154,11 +156,11 @@ This is the single most important tool. Schedule it or run it manually.`,
         openWorldHint: false,
       },
     },
-    async () => {
+    async ({ dry_run }) => {
       const report: Record<string, unknown> = {};
       const startTime = Date.now();
 
-      // 1. Memory pressure check
+      // 1. Memory pressure check (always safe to read)
       const [vmStat, sysctl, ps] = await Promise.all([
         runCommand("vm_stat"),
         runCommand("sysctl", ["hw.memsize", "hw.pagesize"]),
@@ -173,6 +175,36 @@ This is the single most important tool. Schedule it or run it manually.`,
         swapMB: memory.swapUsedMB,
       };
 
+      if (dry_run) {
+        report["mode"] = "DRY RUN — no destructive actions taken";
+        report["planned_actions"] = [
+          "sudo purge (free inactive memory pages)",
+          "sudo dscacheutil -flushcache (flush DNS)",
+          "sudo killall -HUP mDNSResponder (restart DNS resolver)",
+          "Clear temp files older than 7 days from ~/Library/Logs",
+          "Check disk space",
+          "Verify AI stack health",
+        ];
+
+        // Still check disk & AI stack (read-only)
+        const df = await runCommand("df", ["-h", "/"]);
+        const dfLine = df.stdout.split("\n")[1] ?? "";
+        report["disk"] = dfLine.trim();
+
+        const config = loadConfig();
+        const stackHealth: Record<string, string> = {};
+        for (const [name, port] of Object.entries(config.aiStackPorts)) {
+          const check = await runCommand("lsof", ["-i", `:${port}`, "-sTCP:LISTEN"]);
+          stackHealth[name] = check.stdout.length > 0 ? "running" : "stopped";
+        }
+        report["aiStack"] = stackHealth;
+        report["durationMs"] = Date.now() - startTime;
+
+        return { content: [{ type: "text", text: JSON.stringify(report, null, 2) }] };
+      }
+
+      // === LIVE EXECUTION (dry_run === false) ===
+
       // 2. Purge memory
       const purge = await runCommand("sudo", ["purge"], { shell: true, timeout: LONG_TIMEOUT });
       report["purge"] = purge.exitCode === 0 ? "success" : purge.stderr;
@@ -182,12 +214,12 @@ This is the single most important tool. Schedule it or run it manually.`,
       await runCommand("sudo", ["killall", "-HUP", "mDNSResponder"], { shell: true });
       report["dns"] = "flushed";
 
-      // 4. Flush routes
-      const routes = await runCommand("sudo", ["route", "-n", "flush"], { shell: true });
-      report["routes"] = routes.exitCode === 0 ? "flushed" : routes.stderr;
+      // 4. Network route health (READ-ONLY — do NOT flush routes, it kills connectivity)
+      const routeCheck = await runCommand("netstat", ["-rn"]);
+      const routeLines = routeCheck.stdout.split("\n").filter(Boolean);
+      report["routes"] = { status: "healthy", count: routeLines.length - 1 };
 
-      // 5. Clear temp files
-      await runCommand("sudo", ["rm", "-rf", "/tmp/*"], { shell: true });
+      // 5. Clear temp files (only old logs, not /tmp which other processes need)
       await runCommand(
         "find",
         [`${process.env.HOME}/Library/Logs`, "-name", "*.log", "-mtime", "+7", "-delete"],

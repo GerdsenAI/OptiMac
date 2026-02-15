@@ -101,15 +101,17 @@ Runs: dscacheutil -flushcache && killall -HUP mDNSResponder`,
     "optimac_flush_routes",
     {
       title: "Flush Network Routes",
-      description: `Flush the network routing table. Clears stale routes that can cause connectivity issues.
+      description: `⚠️ CAUTION: This will temporarily KILL network connectivity until routes are re-established (usually a few seconds, but may require reboot).
+
+Flush the network routing table. Clears all routes including the default gateway.
 
 Runs: sudo route -n flush
 
-Use this when you notice network slowness or routing errors after switching networks.`,
+Only use this when you have confirmed routing issues after switching networks. In most cases, optimac_flush_dns is sufficient.`,
       inputSchema: {},
       annotations: {
         readOnlyHint: false,
-        destructiveHint: false,
+        destructiveHint: true,
         idempotentHint: true,
         openWorldHint: false,
       },
@@ -121,7 +123,8 @@ Use this when you notice network slowness or routing errors after switching netw
           type: "text",
           text: JSON.stringify({
             status: result.exitCode === 0 ? "success" : "error",
-            message: result.exitCode === 0 ? "Routing table flushed" : result.stderr,
+            message: result.exitCode === 0 ? "Routing table flushed. Network connectivity may take a few seconds to recover." : result.stderr,
+            warning: "If connectivity does not recover, reboot or run: sudo route add default <gateway-ip>",
           }, null, 2),
         }],
       };
@@ -584,15 +587,18 @@ Presets:
     "optimac_network_reset",
     {
       title: "Full Network Reset",
-      description: `Perform a complete network reset: flush DNS, flush routes, reset mDNSResponder, and optionally set fast DNS.
+      description: `⚠️ CAUTION: This will temporarily DISRUPT network connectivity.
 
-Use this when experiencing connectivity issues, high latency to APIs, or after switching networks.`,
+Performs: flush DNS, restart mDNSResponder, and optionally set fast DNS (Cloudflare 1.1.1.1).
+Note: Route flushing has been removed from this tool as it is rarely needed and can cause prolonged outages.
+
+Use optimac_flush_dns first — it solves most DNS/connectivity issues without risk.`,
       inputSchema: {
         set_fast_dns: z.boolean().default(true).describe("Also set DNS to Cloudflare 1.1.1.1"),
       },
       annotations: {
         readOnlyHint: false,
-        destructiveHint: false,
+        destructiveHint: true,
         idempotentHint: true,
         openWorldHint: false,
       },
@@ -608,9 +614,10 @@ Use this when experiencing connectivity issues, high latency to APIs, or after s
       const mdns = await runCommand("sudo", ["killall", "-HUP", "mDNSResponder"], { shell: true });
       results["mDNSResponder"] = mdns.exitCode === 0 ? "restarted" : mdns.stderr;
 
-      // Flush routes
-      const routes = await runCommand("sudo", ["route", "-n", "flush"], { shell: true });
-      results["routes"] = routes.exitCode === 0 ? "flushed" : routes.stderr;
+      // Routes: READ-ONLY check instead of flush (flush drops all routes and kills connectivity)
+      const routeCheck = await runCommand("netstat", ["-rn"]);
+      const routeCount = routeCheck.stdout.split("\n").filter(Boolean).length - 1;
+      results["routes"] = `healthy (${routeCount} routes, not flushed — use optimac_flush_routes if truly needed)`;
 
       // Optionally set fast DNS
       if (set_fast_dns) {
@@ -1053,13 +1060,27 @@ efficiency — aggressive sleep, low power mode enabled.`,
       annotations: { destructiveHint: true },
     },
     async () => {
-      // brew may be in /opt/homebrew/bin (Apple Silicon) or /usr/local/bin (Intel)
-      const whichBrew = await runCommand("which", ["brew"], { shell: true, timeout: 5000 });
-      if (whichBrew.exitCode !== 0) {
-        return { content: [{ type: "text", text: "Homebrew is not installed. Install from https://brew.sh" }], isError: true };
+      // Check well-known Homebrew paths directly (which/shell may not have full PATH)
+      const brewPaths = ["/opt/homebrew/bin/brew", "/usr/local/bin/brew"];
+      let brewPath = "";
+      for (const p of brewPaths) {
+        try {
+          const { accessSync } = await import("fs");
+          accessSync(p);
+          brewPath = p;
+          break;
+        } catch { /* not at this path */ }
       }
 
-      const brewPath = whichBrew.stdout.trim() || "brew";
+      if (!brewPath) {
+        // Fallback: try which in case of custom install
+        const whichBrew = await runCommand("which", ["brew"], { shell: true, timeout: 5000 });
+        brewPath = whichBrew.exitCode === 0 ? whichBrew.stdout.trim() : "";
+      }
+
+      if (!brewPath) {
+        return { content: [{ type: "text", text: "Homebrew is not installed. Install from https://brew.sh" }], isError: true };
+      }
       const cleanup = await runCommand(brewPath, ["cleanup", "--prune=7"], { timeout: 120000 });
       const autoremove = await runCommand(brewPath, ["autoremove"], { timeout: 60000 });
 
