@@ -1,20 +1,22 @@
 # OptiMac MCP Server - Command Reference
 
-Version 2.5.0 | 60 tools across 9 domains
+Version 2.7.0 | 89 tools across 11 domains
 
 All tools are accessible via Claude Desktop or Claude Code when the OptiMac MCP server is configured. Each tool returns structured JSON responses.
 
 ## Table of Contents
 
-1. System Monitoring (6 tools)
-2. System Control (13 tools)
-3. AI Stack Management (7 tools)
-4. Model Management (9 tools)
-5. Model Tasks (9 tools)
-6. Edge-to-Edge (4 tools)
-7. Memory Pressure (2 tools)
-8. Configuration (6 tools)
-9. Autonomy (4 tools)
+1. [System Monitoring](#1-system-monitoring) (8 tools)
+2. [System Control](#2-system-control) (15 tools)
+3. [AI Stack Management](#3-ai-stack-management) (7 tools)
+4. [Model Management](#4-model-management) (9 tools)
+5. [Model Tasks](#5-model-tasks) (9 tools)
+6. [Edge-to-Edge](#6-edge-to-edge) (4 tools)
+7. [Memory Pressure](#7-memory-pressure) (2 tools)
+8. [Configuration](#8-configuration) (7 tools)
+9. [Autonomy](#9-autonomy) (4 tools)
+10. [Security](#10-security) (7 tools)
+11. [Networking](#11-networking) (8 tools)
 
 ---
 
@@ -30,8 +32,6 @@ Get detailed memory statistics including physical RAM usage, swap, compressed me
 
 **Returns:** totalPhysicalMB, usedMB, freeMB, activePages, wiredPages, compressedPages, swapUsedMB, pressureLevel (nominal/warning/critical)
 
-**Example use:** "How much RAM am I using right now?"
-
 ---
 
 ### optimac_top_processes
@@ -46,8 +46,6 @@ List top processes by memory or CPU usage.
 
 **Returns:** Array of processes with PID, user, CPU%, MEM%, RSS in MB, and command
 
-**Example use:** "What's eating all my RAM?"
-
 ---
 
 ### optimac_disk_usage
@@ -57,8 +55,6 @@ Show disk usage for all mounted volumes.
 **Parameters:** none
 
 **Returns:** Array of volumes with filesystem, size, used, available (MB), and usage percentage
-
-**Example use:** "How much disk space do I have left?"
 
 ---
 
@@ -70,8 +66,6 @@ Read CPU/GPU temperatures and throttling status. Requires sudo.
 
 **Returns:** CPU temperature (C), GPU temperature (C), throttling status
 
-**Example use:** "Is my Mac overheating during inference?"
-
 ---
 
 ### optimac_power_settings
@@ -81,8 +75,6 @@ Read current pmset power management settings.
 **Parameters:** none
 
 **Returns:** Key-value map of all pmset settings
-
-**Example use:** "What are my current power settings?"
 
 ---
 
@@ -94,7 +86,27 @@ Comprehensive system health snapshot in one call. Returns memory, top 5 processe
 
 **Returns:** Combined dashboard data from multiple sources
 
-**Example use:** "Give me a full system health check"
+---
+
+### optimac_gpu_stats
+
+Apple Silicon GPU utilization, frequency, and memory residency statistics.
+
+**Parameters:** none
+
+**Returns:** gpuFrequencyMHz, activeResidency%, idleResidency%, device utilization
+
+---
+
+### optimac_io_stats
+
+Disk I/O statistics using iostat — reads/writes per second and bandwidth.
+
+**Parameters:**
+
+- `interval` (number, optional): Sample interval in seconds (default 1)
+
+**Returns:** Per-disk I/O rates and transfer bandwidth
 
 ---
 
@@ -110,8 +122,6 @@ Force-purge inactive/purgeable memory pages. Equivalent to `sudo purge`.
 
 **Returns:** Memory stats before and after purge
 
-**Example use:** "Free up RAM after unloading a model"
-
 ---
 
 ### optimac_flush_dns
@@ -122,17 +132,17 @@ Flush macOS DNS cache and restart mDNSResponder.
 
 **Returns:** Success/failure status
 
-**Example use:** "I'm getting DNS errors when pulling models"
-
 ---
 
 ### optimac_flush_routes
 
-Flush the network routing table. Clears stale routes.
+> ⚠️ **CAUTION:** This will temporarily KILL network connectivity until routes are re-established. May require reboot.
+
+Flush the network routing table. Clears all routes including the default gateway.
 
 **Parameters:** none
 
-**Returns:** Success/failure status
+**Returns:** Success/failure status with recovery instructions
 
 ---
 
@@ -151,53 +161,48 @@ Modify a single pmset power management setting.
 
 ### optimac_power_optimize
 
-Apply all recommended power settings for an always-on AI inference server in a single call. Sets sleep 0, displaysleep 0, disksleep 0, womp 1, autorestart 1, ttyskeepawake 1, powernap 0.
+Apply all recommended power settings for an always-on AI inference server. Sets sleep 0, displaysleep 0, disksleep 0, womp 1, autorestart 1, ttyskeepawake 1, powernap 0.
 
 **Parameters:** none
 
 **Returns:** List of settings applied
 
-**Example use:** "Configure this Mac as a 24/7 inference server"
+---
+
+### optimac_power_profile
+
+Apply named power profiles (performance, balanced, powersave) with all relevant settings in one call.
+
+**Parameters:**
+
+- `profile` (string): "performance", "balanced", or "powersave"
+
+**Returns:** Applied settings
 
 ---
 
 ### optimac_kill_process
 
-Terminate a process by PID. Protected processes (Ollama, LM Studio, MLX, sshd, etc.) cannot be killed unless force=true.
+Terminate a process by PID. Protected processes cannot be killed unless force=true.
 
 **Parameters:**
 
 - `pid` (number): Process ID
 - `force` (boolean, optional): Override protection (default false)
-- `signal` (string, optional): Signal to send - "TERM" (default), "KILL", or "HUP"
+- `signal` (string, optional): "TERM" (default), "KILL", or "HUP"
 
 **Returns:** Status of kill operation
 
 ---
 
-### optimac_disable_service
+### optimac_disable_service / optimac_enable_service
 
-Disable a launchd service (launch agent or daemon).
+Disable or re-enable a launchd service (launch agent or daemon).
 
 **Parameters:**
 
 - `service` (string): Service label (e.g., "com.apple.Siri.agent")
 - `domain` (string, optional): "user" (default) or "system"
-
-**Returns:** Confirmation of disable
-
----
-
-### optimac_enable_service
-
-Re-enable a previously disabled launchd service.
-
-**Parameters:**
-
-- `service` (string): Service label
-- `domain` (string, optional): "user" (default) or "system"
-
-**Returns:** Confirmation of enable
 
 ---
 
@@ -207,9 +212,13 @@ Disable Spotlight indexing system-wide. Highest-impact single optimization for A
 
 **Parameters:** none
 
-**Returns:** Confirmation
+---
 
-**Example use:** "Stop Spotlight from competing with model I/O"
+### optimac_rebuild_spotlight
+
+Re-enable Spotlight and rebuild the search index.
+
+**Parameters:** none
 
 ---
 
@@ -219,7 +228,7 @@ Clear safe system caches, temp files, and old logs.
 
 **Parameters:** none
 
-**Returns:** Bytes freed
+**Returns:** Bytes freed, before/after disk usage
 
 ---
 
@@ -232,19 +241,17 @@ Set DNS servers for the active network interface.
 - `preset` (string, optional): "cloudflare" (default), "google", "quad9", "custom"
 - `servers` (string[], optional): Custom DNS servers (only with preset=custom)
 
-**Returns:** Confirmation of DNS change
-
 ---
 
 ### optimac_network_reset
 
-Full network stack reset: flush DNS, flush routes, reset mDNSResponder, optionally set fast DNS.
+> ⚠️ **CAUTION:** This will temporarily DISRUPT network connectivity.
+
+Flush DNS, restart mDNSResponder, and optionally set fast DNS. Route flushing has been removed — use `optimac_flush_routes` separately if truly needed.
 
 **Parameters:**
 
 - `set_fast_dns` (boolean, optional): Also set DNS to Cloudflare 1.1.1.1 (default true)
-
-**Returns:** Summary of reset steps
 
 ---
 
@@ -254,7 +261,47 @@ Disable macOS visual effects, animations, and transparency to reduce GPU overhea
 
 **Parameters:** none
 
-**Returns:** List of settings changed
+---
+
+### optimac_optimize_homebrew
+
+Run Homebrew cleanup (prune 7 days) and autoremove unused dependencies.
+
+**Parameters:** none
+
+**Returns:** Disk space freed
+
+---
+
+### optimac_nvram_perf_mode
+
+Toggle macOS performance mode via NVRAM for server-class workloads.
+
+**Parameters:**
+
+- `enable` (boolean): Enable or disable performance mode
+
+---
+
+### optimac_battery_health
+
+Read battery health, cycle count, and power source on MacBooks.
+
+**Parameters:** none
+
+**Returns:** Battery percentage, health, cycle count, charging state
+
+---
+
+### System Utility Tools
+
+| Tool | Description |
+|------|-------------|
+| `optimac_sys_eject` | Safely eject a mounted volume |
+| `optimac_sys_lock` | Lock the screen |
+| `optimac_sys_login_items` | List login items (startup apps) |
+| `optimac_sys_restart_service` | Restart a launchd service |
+| `optimac_sys_trash` | Empty the Trash |
 
 ---
 
@@ -264,33 +311,15 @@ Manage AI inference services: Ollama, LM Studio, MLX.
 
 ### optimac_ai_stack_status
 
-Health check all AI inference services. Returns running status, port, loaded models, and memory usage for each service.
+Health check all AI inference services. Returns running status, port, loaded models, and memory usage.
 
 **Parameters:** none
-
-**Returns:** Status object for ollama, lmstudio, mlx_server, openclaw, claude_code
-
-**Example use:** "Which AI services are running right now?"
 
 ---
 
-### optimac_ollama_start
+### optimac_ollama_start / optimac_ollama_stop
 
-Start the Ollama inference server on port 11434.
-
-**Parameters:** none
-
-**Returns:** Status (already_running, started, failed, or not_installed)
-
----
-
-### optimac_ollama_stop
-
-Stop the Ollama inference server.
-
-**Parameters:** none
-
-**Returns:** Status (stopped or still_running)
+Start or stop the Ollama inference server on port 11434.
 
 ---
 
@@ -301,48 +330,42 @@ List, pull, or remove Ollama models.
 **Parameters:**
 
 - `action` (string): "list", "pull", or "remove"
-- `model` (string, optional): Model name (required for pull/remove, e.g., "llama3.2:3b")
-
-**Returns:** Model list, pull progress, or removal confirmation
+- `model` (string, optional): Model name (required for pull/remove)
 
 ---
 
-### optimac_mlx_serve
+### optimac_mlx_serve / optimac_mlx_stop
 
-Start an MLX-LM inference server for a specific model.
+Start or stop an MLX-LM inference server.
+
+**Parameters (serve):**
+
+- `model` (string): HuggingFace model ID
+- `port` (number, optional): Port (default 8080)
+
+---
+
+### optimac_mlx_quantize
+
+Quantize an MLX model to a lower bit-width.
 
 **Parameters:**
 
-- `model` (string): HuggingFace model ID (e.g., "mlx-community/Qwen2.5-7B-Instruct-4bit")
-- `port` (number, optional): Port to serve on (default 8080)
-
-**Returns:** Status with API endpoint URL
-
----
-
-### optimac_mlx_stop
-
-Stop any running mlx_lm.server processes.
-
-**Parameters:** none
-
-**Returns:** Confirmation
+- `model` (string): Model identifier
+- `bits` (number): Target quantization (4 or 8)
+- `dry_run` (boolean, optional): Preview without executing
 
 ---
 
 ### optimac_swap_model
 
-Intelligently swap the currently loaded model for a different one. Handles the full lifecycle: stop existing servers, purge memory, start new model.
+Intelligently swap the currently loaded model. Handles the full lifecycle: stop → purge → load → verify.
 
 **Parameters:**
 
 - `runtime` (string): "ollama" or "mlx"
 - `model` (string): Model identifier
 - `port` (number, optional): Port override
-
-**Returns:** Step-by-step status of the swap operation
-
-**Example use:** "Switch from Llama 3.2 to Qwen 2.5 on Ollama"
 
 ---
 
@@ -352,229 +375,155 @@ Browse, serve, and manage local model files with RAM safety checks. (9 tools)
 
 ### optimac_models_available
 
-Scan the model base directory and common model locations for downloaded model files. Returns only models that fit in currently available RAM (with ~20% headroom).
-
-Scans for .gguf, .safetensors, .bin, .pth, .pt, .onnx files larger than 50MB.
-
-Search locations: modelBaseDir (from config), ~/.ollama/models, ~/.cache/huggingface/hub, ~/.cache/lm-studio/models, ~/models.
+Scan local directories for downloaded model files. Returns only models that fit in available RAM (20% headroom).
 
 **Parameters:**
 
-- `show_all` (boolean, optional): Show all models including those too large for current RAM (default false)
-
-**Returns:**
-
-- systemRAM: total/used/available in GB
-- headroomPolicy: explanation of 20% reservation
-- searchedDirectories: paths scanned
-- models: array of model files with path, size, fitsInRAM, requiredRAM_GB
-
-**Example use:** "What models can I run right now?"
+- `show_all` (boolean, optional): Show all including too-large models
 
 ---
 
 ### optimac_ollama_available
 
-List Ollama models that are downloaded and can be served. Only returns models that fit in currently available RAM with 20% headroom. Also shows currently running models.
+List Ollama models that are downloaded and can be served with RAM headroom.
 
 **Parameters:**
 
-- `show_all` (boolean, optional): Show all including too-large models (default false)
-
-**Returns:**
-
-- availableRAM_GB, totalInstalled, canRunNow, tooLargeForRAM counts
-- models: array with name, id, sizeGB, fitsInRAM, requiredRAM_GB
-- currentlyRunning: output of `ollama ps`
-
-**Example use:** "Which of my Ollama models can I load without swapping?"
+- `show_all` (boolean, optional): Show all including too-large models
 
 ---
 
 ### optimac_model_serve
 
-Load and serve a model for inference. Checks RAM availability before loading and refuses models that would exceed available RAM with 20% headroom.
+Load and serve a model. Checks RAM before loading.
 
 **Parameters:**
 
 - `runtime` (string): "ollama" or "mlx"
-- `model` (string): Model name (Ollama tag) or path/HuggingFace ID (MLX)
-- `force` (boolean, optional): Override RAM safety check (default false)
-
-**Returns:**
-
-- On success: status, runtime, model, port, API endpoint
-- On too-large: error with modelSizeGB, requiredGB, availableGB, suggestions
-
-**Example use:** "Serve llama3.2:3b with Ollama" or "Start MLX with mlx-community/Qwen2.5-7B-Instruct-4bit"
-
-**Safety:** Will return MODEL_TOO_LARGE error if model + 20% headroom exceeds available RAM. Use force=true to override (may cause swap thrashing).
+- `model` (string): Model name/path
+- `force` (boolean, optional): Override RAM safety check
 
 ---
 
 ### optimac_model_unload
 
-Unload a running model to free RAM. For Ollama, unloads model from memory (keeps it downloaded). For MLX, stops the server process. Use "all" to stop everything.
+Unload running models to free RAM. Use "all" to stop everything.
 
 **Parameters:**
 
 - `runtime` (string, optional): "ollama", "mlx", or "all" (default "all")
 
-**Returns:** Unload status per service, RAM after unload, next step suggestion
-
-**Example use:** "Unload all models to free RAM"
-
 ---
 
 ### optimac_models_running
 
-Show all models currently loaded and serving across all runtimes (Ollama, MLX, LM Studio).
+Show all models currently loaded across all runtimes.
 
 **Parameters:** none
 
-**Returns:** Running status for each runtime with loaded models, ports, and current RAM usage
-
-**Example use:** "What models are loaded right now?"
-
 ---
 
-### optimac_model_dir_set
+### optimac_model_dir_set / optimac_model_dir_get
 
-Set the base directory where model files are stored. This directory is scanned by optimac_models_available.
+Set or get the base directory where model files are stored.
 
-**Parameters:**
+**Parameters (set):**
 
-- `path` (string): Absolute path to the model directory
-
-**Returns:** Confirmation with path
-
-**Example use:** `optimac_model_dir_set path="/Volumes/M2 Raid0/AI Models"`
-
----
-
-### optimac_model_dir_get
-
-Get the currently configured model base directory.
-
-**Parameters:** none
-
-**Returns:** Current modelBaseDir path and whether it exists
+- `path` (string): Absolute path to model directory
 
 ---
 
 ### optimac_model_ram_check
 
-Check if a specific model can be loaded without causing swap thrashing. Takes model size in GB and checks against available RAM with 20% headroom.
+Check if a model fits in RAM with 20% headroom.
 
 **Parameters:**
 
-- `size_gb` (number): Model size in GB (e.g., 4.7)
-- `model_name` (string, optional): Model name for the report
-
-**Returns:**
-
-- fits: boolean verdict
-- modelSizeGB, requiredWithHeadroomGB, availableRAM_GB
-- headroomAfterLoadGB (if fits)
-- suggestions (if doesn't fit)
-
-**Example use:** "Can I load a 7GB model right now?"
+- `size_gb` (number): Model size in GB
+- `model_name` (string, optional): Name for the report
 
 ---
 
 ### optimac_model_chat
 
-Send a prompt to a currently loaded model and get a response. Uses the OpenAI-compatible /v1/chat/completions endpoint exposed by Ollama, MLX, or LM Studio.
-
-Automatically detects which runtime has a model loaded. If multiple are running, specify the runtime parameter.
+Chat with a currently loaded model via OpenAI-compatible API.
 
 **Parameters:**
 
-- `prompt` (string): The message to send to the model
-- `system` (string, optional): System prompt for context
-- `runtime` (string, optional): "auto" (default), "ollama", "mlx", or "lmstudio"
+- `prompt` (string): Message to send
+- `system` (string, optional): System prompt
+- `runtime` (string, optional): "auto", "ollama", "mlx", or "lmstudio"
 - `temperature` (number, optional): Sampling temperature (default 0.3)
-- `max_tokens` (number, optional): Max tokens to generate (default 1024)
+- `max_tokens` (number, optional): Max tokens (default 1024)
 
-**Returns:**
+---
 
-- runtime, model, port
-- response: The model's text response
-- usage: prompt_tokens, completion_tokens, total_tokens
+### optimac_model_benchmark
 
-**Errors:**
-- NO_MODEL_RUNNING: No inference server detected
-- RUNTIME_NOT_RUNNING: Specified runtime not active
-- INFERENCE_FAILED: Model failed to respond
-- PARSE_ERROR: Invalid JSON from model API
+Benchmark a model's inference speed using Ollama HTTP API.
 
-**Example use:** "Ask the loaded model to review this code diff." / "Have qwen3 summarize this document."
+**Parameters:**
+
+- `model` (string, optional): Model name (default: llama3:latest)
+- `prompt` (string, optional): Benchmark prompt
+
+**Returns:** tokens/second, time to first token, total tokens, duration
 
 ---
 
 ## 5. Model Tasks
 
-Three-tier AI bridge tools. Local, edge, and cloud as equal peers: local models handle privacy-sensitive and latency-critical tasks, edge endpoints handle cross-runtime and LAN delegation, cloud models handle complex reasoning and large-context work.
+Three-tier AI bridge: local → edge → cloud.
 
 ### optimac_model_task
 
-Send a free-form task to the local model with file context. The model reads specified files, processes them with a custom prompt, and returns results.
+Send a free-form task to the local model with file context.
 
 **Parameters:**
 
-- `prompt` (string): The task description
+- `prompt` (string): Task description
 - `files` (string[], optional): Paths to include as context
 - `system` (string, optional): Override system prompt
-
-**Returns:** Model response with file context
-
-**Example use:** "Ask the local model to explain this code"
 
 ---
 
 ### optimac_model_code_review
 
-Run a local AI code review on the latest git diff in a repository. Uses safe `cwd`-based git commands with input validation.
+Local AI code review on git diffs.
 
 **Parameters:**
 
 - `repo_path` (string): Absolute path to git repository
-- `branch` (string, optional): Branch to review (default: current)
-- `against` (string, optional): Base branch to diff against (default: HEAD~1)
-
-**Returns:** Code review with findings categorized by severity
-
-**Example use:** "Review my latest commit in /path/to/repo"
+- `target` (string, optional): "uncommitted", "staged", or commit ref
+- `focus` (string, optional): Review focus area
 
 ---
 
 ### optimac_model_generate
 
-Generate code from a natural-language description using the local model.
+Generate a file from natural-language description.
 
 **Parameters:**
 
 - `description` (string): What to generate
-- `language` (string, optional): Target language (default: inferred)
-- `output_file` (string, optional): Where to write the result
-
-**Returns:** Generated code
+- `output_path` (string): Where to write (must be inside $HOME)
+- `context_files` (string[], optional): Reference files
+- `language` (string, optional): Language hint
 
 ---
 
 ### optimac_model_edit
 
-Edit existing files using natural-language instructions. Reads the file, sends it to the local model with the instructions, and writes back the result.
+Edit existing files using natural-language instructions.
 
 **Parameters:**
 
 - `file_path` (string): File to edit
 - `instructions` (string): What to change
-- `create_backup` (boolean, optional): Create .bak file first (default true)
+- `context_files` (string[], optional): Additional context
+- `create_backup` (boolean, optional): Create .bak first (default true)
 
-**Returns:** Diff of changes, write confirmation
-
-**Safety:** Validates file paths with `isPathSafe` to prevent writes outside home directory.
+**Safety:** Validates paths to prevent writes outside home directory.
 
 ---
 
@@ -584,140 +533,89 @@ Summarize one or more files using the local model.
 
 **Parameters:**
 
-- `files` (string[]): Files to summarize
-- `style` (string, optional): Summary style ("brief", "detailed", "technical")
-
-**Returns:** Summary text
+- `paths` (string[]): Files/directories to summarize
+- `focus` (string, optional): Summary focus
+- `format` (string, optional): Output format
 
 ---
 
 ### optimac_model_commit
 
-Generate a conventional commit message from the current git diff using the local model. Uses safe `cwd`-based git commands with sanitized refs.
+Generate a commit message from git diff using the local model.
 
 **Parameters:**
 
-- `repo_path` (string): Absolute path to git repository
+- `repo_path` (string): Path to git repository
 - `auto_commit` (boolean, optional): Stage and commit automatically (default false)
-
-**Returns:** Generated commit message, optional commit confirmation
+- `files_to_stage` (string[], optional): Specific files (empty = all)
+- `style` (string, optional): "conventional", "descriptive", or "short"
 
 ---
 
 ### optimac_cloud_escalate
 
-Escalate a task to a cloud AI provider (OpenAI, Anthropic, Google) when local models can't handle the complexity. Requires API keys set in environment variables.
+Escalate a task to a cloud AI provider when local models can't handle it.
 
 **Parameters:**
 
-- `prompt` (string): The task to send to the cloud
-- `provider` (string, optional): "openai", "anthropic", or "google" (default: openai)
-- `model` (string, optional): Specific model (default: provider's latest)
-- `files` (string[], optional): Files to include as context
-
-**Returns:** Cloud model response with provider info and usage stats
+- `prompt` (string): Task to send
+- `provider` (string, optional): "openrouter" (default), "anthropic", or "openai"
+- `model` (string, optional): Specific model
+- `files` (string[], optional): Files to include
 
 ---
 
 ### optimac_edge_escalate
 
-Edge-to-Edge bridge: send a task to another inference server on the local network or same machine. Targets a specific configured edge endpoint by name.
+Send a task to another inference server on the LAN.
 
 **Parameters:**
 
-- `prompt` (string): Task to send to edge endpoint
+- `prompt` (string): Task to send
 - `edge_endpoint` (string): Name of configured edge endpoint
 - `system` (string, optional): System prompt
-- `files` (string[], optional): File paths to include as context
-- `max_tokens` (number, optional): Max tokens for response (default: 4096)
-
-**Returns:** Edge model response with endpoint info, latency, and model used
-
-**Example use:** "Send this code review task to the nvidia-vllm edge endpoint"
+- `files` (string[], optional): File paths
+- `max_tokens` (number, optional): Max tokens (default 4096)
 
 ---
 
 ### optimac_model_route
 
-Three-tier smart router: tries local first, then edge endpoints sorted by priority, then cloud. Evaluates response quality at each tier and escalates if insufficient.
+Three-tier smart router: local → edge → cloud. Evaluates response quality at each tier.
 
 **Parameters:**
 
-- `task` (string): The task to route
-- `files` (string[], optional): Files to include as context
-- `prefer` (string, optional): "local", "edge", "cloud", or "auto" (default: auto)
-- `sensitive` (boolean, optional): If true, never escalate to cloud (default: false)
+- `task` (string): Task to route
+- `files` (string[], optional): Context files
+- `prefer` (string, optional): "local", "edge", "cloud", or "auto"
+- `sensitive` (boolean, optional): Never escalate to cloud (default false)
 - `output_path` (string, optional): Write result to file
-- `cloud_provider` (string, optional): Fallback cloud provider (default: openrouter)
-- `edge_endpoint` (string, optional): Target a specific edge endpoint
-
-**Returns:** Response with routing metadata: which tier executed it, whether it was escalated, quality assessment
-
-**Example use:** "Route this task to the best available model" / "Run this on the edge tier only"
+- `cloud_provider` (string, optional): Fallback cloud provider
+- `edge_endpoint` (string, optional): Target specific edge
 
 ---
 
 ## 6. Edge-to-Edge
 
-Manage remote inference endpoints on the local network or same machine. Supports Ollama (remote), MLX, LM Studio, vLLM, AnythingLLM, or any OpenAI-compatible server.
+Manage remote inference endpoints. Supports Ollama, MLX, LM Studio, vLLM, AnythingLLM, or any OpenAI-compatible server.
 
-### optimac_edge_add
+### optimac_edge_add / optimac_edge_remove / optimac_edge_list / optimac_edge_test
 
-Register a new edge inference endpoint for Edge-to-Edge routing.
+Register, remove, list, or test edge inference endpoints.
 
-**Parameters:**
+**Parameters (add):**
 
-- `name` (string): Unique identifier (alphanumeric, hyphens, underscores)
-- `url` (string): Base URL of the endpoint (e.g., "http://192.168.1.50:11434")
-- `runtime_type` (string, optional): "ollama", "mlx", "lmstudio", "vllm", "anythingllm", or "openai-compatible" (default: openai-compatible)
+- `name` (string): Unique identifier
+- `url` (string): Base URL (e.g., "http://192.168.1.50:11434")
+- `runtime_type` (string, optional): "ollama", "mlx", "lmstudio", "vllm", "anythingllm", or "openai-compatible"
 - `api_key` (string, optional): Authentication key
-- `default_model` (string, optional): Model to request (auto-detected if omitted)
-- `priority` (number, optional): Routing priority 1-100, lower = tried first (default: 50)
+- `default_model` (string, optional): Model to request
+- `priority` (number, optional): Routing priority 1-100
 
-**Returns:** Endpoint config with connectivity probe result
+**Parameters (test):**
 
-**Example use:** "Register my NVIDIA box running vLLM at 192.168.1.50:8000"
-
----
-
-### optimac_edge_remove
-
-Remove a registered edge endpoint by name.
-
-**Parameters:**
-
-- `name` (string): Name of the endpoint to remove
-
-**Returns:** Confirmation with remaining endpoint count
-
----
-
-### optimac_edge_list
-
-List all configured edge endpoints with live connectivity status.
-
-**Parameters:**
-
-- `check_connectivity` (boolean, optional): Probe each endpoint for live status (default: true)
-
-**Returns:** Array of endpoints with name, URL, runtime type, priority, reachability, latency, available models
-
-**Example use:** "Show me all my edge endpoints and whether they are online"
-
----
-
-### optimac_edge_test
-
-Send a test prompt to a specific edge endpoint and measure response quality and latency.
-
-**Parameters:**
-
-- `name` (string): Name of the configured edge endpoint
-- `prompt` (string, optional): Custom test prompt (default: "Say hello in one sentence.")
-
-**Returns:** Test results including response, model used, latency, and pass/fail verdict
-
-**Example use:** "Test the nvidia-vllm endpoint to make sure it's working"
+- `name` (string): Endpoint name
+- `prompt` (string, optional): Custom test prompt
 
 ---
 
@@ -729,134 +627,48 @@ Tiered memory management tools.
 
 Evaluate current memory pressure and take action if thresholds are exceeded.
 
-Behavior by level:
-- NOMINAL (<75% used): Report only
-- WARNING (75-90%): Report + list high-memory non-protected processes
-- CRITICAL (>90%): Report + purge + auto-kill non-protected processes (if enabled)
-
 **Parameters:**
 
 - `dry_run` (boolean, optional): Report without taking action (default false)
 
 **Returns:** Pressure level, actions taken, process list
 
-**Example use:** "Check memory pressure and clean up if needed"
-
 ---
 
 ### optimac_maintenance_cycle
 
-Run a complete maintenance cycle (8 steps): memory pressure check, purge memory, flush DNS, flush routes, clear caches, check disk space, verify AI stack health, report summary.
-
-**Parameters:** none
-
-**Returns:** Step-by-step results of each maintenance action
-
-**Example use:** "Run full system maintenance"
-
----
-
-## 9. Autonomy
-
-Background monitoring, audit logging, and system health tracking.
-
-### optimac_watchdog_start
-
-Start the background watchdog that monitors memory pressure and AI stack health on a configurable interval. Auto-purges memory at critical pressure.
+Run a complete maintenance cycle: memory check, purge, flush DNS, check routes, clean logs, check disk, verify AI stack.
 
 **Parameters:**
 
-- `interval_minutes` (number, optional): Check interval in minutes (default: from config maintenanceIntervalSec, typically 360 = 6h)
+- `dry_run` (boolean, optional): Preview actions without executing (default false)
 
-**Returns:** Watchdog status (running, intervalMs, checksPerformed, lastCheck, autoActions)
-
-**Example use:** "Start monitoring my system every 30 minutes"
-
----
-
-### optimac_watchdog_stop
-
-Stop the background watchdog.
-
-**Parameters:** none
-
-**Returns:** Watchdog status
-
----
-
-### optimac_watchdog_status
-
-Get current watchdog status: running state, interval, checks performed, and auto-actions taken.
-
-**Parameters:** none
-
-**Returns:** Watchdog status object
-
----
-
-### optimac_audit_read
-
-Read the most recent entries from the OptiMac audit log (~/.optimac/audit.jsonl). Returns structured tool execution history with timing, result status, and error details.
-
-**Parameters:**
-
-- `limit` (number, optional): Number of entries to return (default 50, max 500)
-- `tool_filter` (string, optional): Filter entries by tool name (e.g., "watchdog", "optimac_purge_memory")
-
-**Returns:** Array of audit entries with timestamp, tool, args, result, durationMs, errorType
-
-**Example use:** "Show me the last 10 watchdog actions"
+> **Note:** Route flushing has been removed from this tool. Network route health is checked read-only.
 
 ---
 
 ## 8. Configuration
 
-Manage OptiMac settings at ~/.optimac/config.json. Shared between MCP server and GUI.
+Manage OptiMac settings at ~/.optimac/config.json.
 
-### optimac_config_get
+### optimac_config_get / optimac_config_set
 
-Read the current configuration.
+Read or modify configuration values.
 
-**Parameters:** none
-
-**Returns:** Full config.json contents
-
----
-
-### optimac_config_set
-
-Modify a specific configuration value.
-
-**Parameters:**
+**Parameters (set):**
 
 - `key` (string): One of: memoryWarningThreshold, memoryCriticalThreshold, autoKillAtCritical, maxProcessRSSMB, maintenanceIntervalSec
-- `value` (any): New value (type must match expected)
-
-**Returns:** Confirmation with old and new values
+- `value` (number/boolean): New value
 
 ---
 
-### optimac_config_protect_process
+### optimac_config_protect_process / optimac_config_unprotect_process
 
-Add a process name to the protected list. Protected processes cannot be auto-killed during memory pressure events.
-
-**Parameters:**
-
-- `process_name` (string): Name or substring to match
-
-**Returns:** Updated protected list
-
----
-
-### optimac_config_unprotect_process
-
-Remove a process name from the protected list.
+Add or remove a process from the protected list (immune to auto-kill).
 
 **Parameters:**
 
-- `process_name` (string): Exact name to remove
-
-**Returns:** Updated protected list
+- `process_name` (string): Process name or substring
 
 ---
 
@@ -869,8 +681,6 @@ Configure the port for an AI inference service.
 - `service` (string): "ollama", "lmstudio", or "mlx"
 - `port` (number): Port number (1024-65535)
 
-**Returns:** Confirmation
-
 ---
 
 ### optimac_debloat
@@ -879,48 +689,224 @@ Apply a debloat preset to disable unnecessary macOS services.
 
 **Parameters:**
 
-- `preset` (string): "minimal", "moderate", or "aggressive"
+- `preset` (string): "minimal", "moderate", "aggressive", or "sequoia"
 
-Presets (each includes all services from previous levels):
-- minimal: Siri, Notification Center, iCloud sync (3 services)
-- moderate: + Photo analysis, media analysis, suggestions, Handoff (8 services)
-- aggressive: + Location services, App Store auto-updates, Time Machine (12 services)
+Presets (each includes previous):
+- **minimal:** Siri, Notification Center, iCloud sync, analytics
+- **moderate:** + Photo/media analysis, suggestions, Handoff, sharing
+- **aggressive:** + Location, AirPlay, App Store updates, Apple Intelligence
+- **sequoia:** + All Apple Intelligence services, ML server (macOS 15+/26+)
 
-**Returns:** List of services disabled
+---
+
+### optimac_debloat_reenable
+
+Re-enable all services disabled by a debloat preset.
+
+**Parameters:**
+
+- `preset` (string): Same preset values as debloat
+
+---
+
+## 9. Autonomy
+
+Background monitoring, audit logging, and system health tracking.
+
+### optimac_watchdog_start
+
+Start background watchdog for memory pressure and AI stack health monitoring.
+
+**Parameters:**
+
+- `interval_minutes` (number, optional): Check interval (default from config)
+
+---
+
+### optimac_watchdog_stop / optimac_watchdog_status
+
+Stop the watchdog or get its current status.
+
+---
+
+### optimac_audit_read
+
+Read the most recent entries from the audit log (~/.optimac/audit.jsonl).
+
+**Parameters:**
+
+- `limit` (number, optional): Entries to return (default 50, max 500)
+- `tool_filter` (string, optional): Filter by tool name
+
+---
+
+## 10. Security
+
+System security auditing and hardening tools.
+
+### optimac_sec_status
+
+Check macOS security posture: SIP, Gatekeeper, FileVault, Firewall status.
+
+**Parameters:** none
+
+---
+
+### optimac_sec_firewall
+
+Query or modify the macOS application firewall.
+
+**Parameters:**
+
+- `action` (string): "status", "enable", "disable", or "list"
+
+---
+
+### optimac_sec_audit_ports
+
+Scan for listening network ports and flag suspicious services.
+
+**Parameters:** none
+
+---
+
+### optimac_sec_audit_connections
+
+Audit active outbound network connections for suspicious destinations.
+
+**Parameters:** none
+
+---
+
+### optimac_sec_audit_unsigned
+
+Check running processes for unsigned or ad-hoc signed binaries.
+
+**Parameters:** none
+
+---
+
+### optimac_sec_audit_malware
+
+Basic malware scan: check for known suspicious files and processes.
+
+**Parameters:** none
+
+---
+
+### optimac_sec_audit_auth
+
+Query system logs for recent authentication failures.
+
+**Parameters:** none
+
+**Returns:** Event count, failure count, recent failures
+
+---
+
+## 11. Networking
+
+Network diagnostics, connectivity testing, and remote management.
+
+### optimac_net_ping
+
+Ping a host to check reachability and latency.
+
+**Parameters:**
+
+- `host` (string): Hostname or IP
+- `count` (number, optional): Number of pings (default 4)
+
+---
+
+### optimac_net_connections
+
+List active network connections and listening ports.
+
+**Parameters:**
+
+- `filter` (string, optional): "all" (default), "established", or "listen"
+- `limit` (number, optional): Max results (default 20)
+
+---
+
+### optimac_net_info
+
+Get public IP address and geolocation info.
+
+**Parameters:** none
+
+---
+
+### optimac_net_speedtest
+
+Run a quick download speed test using Cloudflare (10MB).
+
+**Parameters:** none
+
+---
+
+### optimac_net_wifi
+
+Get Wi-Fi status or toggle on/off.
+
+**Parameters:**
+
+- `action` (string): "status", "on", or "off"
+
+---
+
+### optimac_net_bluetooth
+
+Get Bluetooth status or toggle on/off.
+
+**Parameters:**
+
+- `action` (string): "status", "on", or "off"
+
+---
+
+### optimac_net_wol
+
+Send a Wake-on-LAN magic packet to wake a remote machine.
+
+**Parameters:**
+
+- `mac` (string): MAC address (e.g., "AA:BB:CC:DD:EE:FF")
 
 ---
 
 ## RAM Headroom Policy
 
-The model management tools enforce a 20% headroom policy to prevent swap thrashing on Apple Silicon. This means:
+Model management tools enforce a 20% headroom policy to prevent swap thrashing:
 
-- A 4GB model requires 4.8GB of available RAM
-- A 7GB model requires 8.4GB of available RAM
-- A 14GB model requires 16.8GB of available RAM
+- 4GB model → requires 4.8GB available
+- 7GB model → requires 8.4GB available
+- 14GB model → requires 16.8GB available
 
-The headroom covers inference overhead (KV cache, attention buffers, tokenizer), system processes, and prevents the system from entering memory pressure states that degrade performance.
-
-To override this safety check, set `force=true` on `optimac_model_serve`. This is not recommended as it may cause significant swap usage and degrade inference speed.
+Override with `force=true` on `optimac_model_serve` (not recommended).
 
 ## Typical Workflows
 
 **Check what you can run:**
-1. `optimac_models_available` - see all local models that fit in RAM
-2. `optimac_model_ram_check size_gb=7` - check a specific size
+1. `optimac_models_available` → see all local models that fit
+2. `optimac_model_ram_check size_gb=7` → check a specific size
 
 **Load a model:**
-1. `optimac_ollama_available` - see Ollama models that fit
-2. `optimac_model_serve runtime=ollama model=llama3.2:3b` - serve it
+1. `optimac_ollama_available` → see Ollama models that fit
+2. `optimac_model_serve runtime=ollama model=llama3.2:3b` → serve it
 
 **Switch models:**
-1. `optimac_model_unload runtime=all` - free current model
-2. `optimac_purge_memory` - reclaim pages
-3. `optimac_model_serve runtime=ollama model=qwen2.5:7b` - load new one
-
-Or use the one-step `optimac_swap_model runtime=ollama model=qwen2.5:7b`.
+1. `optimac_swap_model runtime=ollama model=qwen2.5:7b` → one-step swap
 
 **Optimize for inference:**
-1. `optimac_power_optimize` - set power for always-on
-2. `optimac_reduce_ui_overhead` - free GPU resources
-3. `optimac_disable_spotlight` - reduce I/O competition
-4. `optimac_debloat preset=moderate` - kill background services
+1. `optimac_power_optimize` → set power for always-on
+2. `optimac_reduce_ui_overhead` → free GPU resources
+3. `optimac_disable_spotlight` → reduce I/O competition
+4. `optimac_debloat preset=moderate` → kill background services
+
+**Security audit:**
+1. `optimac_sec_status` → check SIP, Gatekeeper, FileVault, Firewall
+2. `optimac_sec_audit_ports` → scan for suspicious listeners
+3. `optimac_sec_audit_unsigned` → find unsigned binaries
+4. `optimac_sec_audit_auth` → recent auth failures
