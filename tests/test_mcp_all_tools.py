@@ -15,7 +15,7 @@ from datetime import datetime
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent.parent))
-from gerdsenai_optimac.mcp.client import MCPClient
+from gerdsenai_optimac.mcp.client import MCPClient  # noqa: E402
 
 # Paths used by test fixtures
 HOME = os.path.expanduser("~")
@@ -38,6 +38,8 @@ TOOL_DEFINITIONS = {
         {"name": "optimac_thermal_status", "safe": True, "sudo": True, "args": {}},
         {"name": "optimac_power_settings", "safe": True, "sudo": False, "args": {}},
         {"name": "optimac_system_overview", "safe": True, "sudo": False, "args": {}},
+        {"name": "optimac_battery_health", "safe": True, "sudo": False, "args": {}},
+        {"name": "optimac_io_stats", "safe": True, "sudo": False, "args": {}},
     ],
     # ── SYSTEM CONTROL ────────────────────────────────────────────────
     "system_control": [
@@ -86,6 +88,25 @@ TOOL_DEFINITIONS = {
             "sudo": True,
             "args": {"enable": True},
         },
+        {"name": "optimac_sys_login_items", "safe": True, "sudo": False, "args": {}},
+        {"name": "optimac_sys_eject", "safe": False, "sudo": False, "args": {}},
+        {"name": "optimac_sys_lock", "safe": False, "sudo": False, "args": {}},
+        {
+            "name": "optimac_sys_restart_service",
+            "safe": False,
+            "sudo": False,
+            "args": {"service": "Dock"},
+        },
+        {"name": "optimac_sys_trash", "safe": False, "sudo": False, "args": {}},
+        {
+            "name": "optimac_power_profile",
+            "safe": False,
+            "sudo": True,
+            "args": {"profile": "balanced"},
+        },
+        {"name": "optimac_debloat_reenable", "safe": False, "sudo": True, "args": {}},
+        {"name": "optimac_rebuild_spotlight", "safe": False, "sudo": True, "args": {}},
+        {"name": "optimac_optimize_homebrew", "safe": False, "sudo": False, "args": {}},
     ],
     # ── AI STACK ──────────────────────────────────────────────────────
     "ai_stack": [
@@ -111,6 +132,19 @@ TOOL_DEFINITIONS = {
             "safe": False,
             "sudo": False,
             "args": {"runtime": "ollama", "model": "test"},
+        },
+        {"name": "optimac_gpu_stats", "safe": True, "sudo": True, "args": {}},
+        {
+            "name": "optimac_model_benchmark",
+            "safe": False,
+            "sudo": False,
+            "args": {"model": "llama3.2", "prompt": "test"},
+        },
+        {
+            "name": "optimac_mlx_quantize",
+            "safe": False,
+            "sudo": False,
+            "args": {"model": "test-model"},
         },
     ],
     # ── MODEL MANAGEMENT ──────────────────────────────────────────────
@@ -138,7 +172,8 @@ TOOL_DEFINITIONS = {
             "args": {"path": "/tmp/models"},
         },
         {"name": "optimac_model_dir_get", "safe": True, "sudo": False, "args": {}},
-        # ── FIXED: was "model"+"sizeGB" → correct params are "size_gb" (required) + "model_name" (optional)
+        # ── FIXED: was "model"+"sizeGB" → correct params
+        # are "size_gb" (required) + "model_name" (optional)
         {
             "name": "optimac_model_ram_check",
             "safe": True,
@@ -331,7 +366,66 @@ TOOL_DEFINITIONS = {
         {"name": "optimac_watchdog_start", "safe": False, "sudo": False, "args": {}},
         {"name": "optimac_watchdog_stop", "safe": False, "sudo": False, "args": {}},
         {"name": "optimac_watchdog_status", "safe": True, "sudo": False, "args": {}},
-        {"name": "optimac_audit_read", "safe": True, "sudo": False, "args": {}},
+    ],
+    # ── NETWORK TOOLS (NEW) ───────────────────────────────────────────
+    "network_tools": [
+        {
+            "name": "optimac_net_connections",
+            "safe": True,
+            "sudo": False,
+            "args": {"filter": "listen", "limit": 5},
+        },
+        {"name": "optimac_net_info", "safe": True, "sudo": False, "args": {}},
+        {
+            "name": "optimac_net_ping",
+            "safe": False,
+            "sudo": False,
+            "args": {"host": "127.0.0.1", "count": 1},
+        },
+        {"name": "optimac_net_speedtest", "safe": False, "sudo": False, "args": {}},
+        {
+            "name": "optimac_net_wifi",
+            "safe": False,
+            "sudo": False,
+            "args": {"action": "status"},
+        },
+        {
+            "name": "optimac_net_bluetooth",
+            "safe": False,
+            "sudo": False,
+            "args": {"action": "status"},
+        },
+        {
+            "name": "optimac_net_wol",
+            "safe": False,
+            "sudo": False,
+            "args": {"mac": "00:11:22:33:44:55"},
+        },
+    ],
+    # ── SECURITY TOOLS (NEW) ──────────────────────────────────────────
+    "security_tools": [
+        {"name": "optimac_sec_status", "safe": True, "sudo": False, "args": {}},
+        {
+            "name": "optimac_sec_firewall",
+            "safe": False,
+            "sudo": True,
+            "args": {"action": "status"},
+        },
+        {"name": "optimac_sec_audit_ports", "safe": True, "sudo": False, "args": {}},
+        {"name": "optimac_sec_audit_malware", "safe": True, "sudo": False, "args": {}},
+        {"name": "optimac_sec_audit_auth", "safe": True, "sudo": True, "args": {}},
+        {
+            "name": "optimac_sec_audit_unsigned",
+            "safe": True,
+            "sudo": False,
+            "args": {"limit": 10},
+        },
+        {
+            "name": "optimac_sec_audit_connections",
+            "safe": True,
+            "sudo": False,
+            "args": {},
+        },
     ],
 }
 
@@ -516,7 +610,8 @@ class MCPTester:
 
 **Test Date:** {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}
 **Total Tools:** {summary['total']}
-**Status:** ✅ {summary['passed']} PASS | ❌ {summary['failed']} FAIL | ⏭️ {summary['skipped']} SKIP | ⚠️ {summary['error']} ERROR
+**Status:** ✅ {summary['passed']} PASS | ❌ {summary['failed']} FAIL \
+⏭️ {summary['skipped']} SKIP | ⚠️ {summary['error']} ERROR
 
 ## Summary by Category
 
@@ -542,7 +637,11 @@ class MCPTester:
                     f"{result['durationMs']:.0f}ms" if result["durationMs"] > 0 else "-"
                 )
                 reason = result.get("reason", "")[:50]
-                md += f"| `{result['tool']}` | {status_icon} {result['status']} | {duration} | {reason} |\n"
+                md += (
+                    f"| `{result['tool']}` | {status_icon} "
+                    f"{result['status']} | {duration} "
+                    f"| {reason} |\n"
+                )
 
             md += "\n"
 
@@ -560,14 +659,14 @@ class MCPTester:
             f.write(md)
 
         print(f"\n{'='*60}")
-        print(f"Test Results Summary:")
+        print("Test Results Summary:")
         print(f"  PASS:    {summary['passed']:3d}")
         print(f"  FAIL:    {summary['failed']:3d}")
         print(f"  SKIP:    {summary['skipped']:3d}")
         print(f"  ERROR:   {summary['error']:3d}")
         print(f"  TOTAL:   {summary['total']:3d}")
         print(f"{'='*60}")
-        print(f"\n✓ Reports saved:")
+        print("\n✓ Reports saved:")
         print(f"  - {json_path}")
         print(f"  - {md_path}")
 

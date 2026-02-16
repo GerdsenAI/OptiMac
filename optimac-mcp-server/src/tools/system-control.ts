@@ -7,7 +7,7 @@
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z } from "zod";
 import { runCommand, LONG_TIMEOUT } from "../services/shell.js";
-import { loadConfig, isProcessProtected } from "../services/config.js";
+import { loadConfig, saveConfig, isProcessProtected } from "../services/config.js";
 
 export function registerSystemControlTools(server: McpServer): void {
   // ---- PURGE MEMORY ----
@@ -101,15 +101,17 @@ Runs: dscacheutil -flushcache && killall -HUP mDNSResponder`,
     "optimac_flush_routes",
     {
       title: "Flush Network Routes",
-      description: `Flush the network routing table. Clears stale routes that can cause connectivity issues.
+      description: `⚠️ CAUTION: This will temporarily KILL network connectivity until routes are re-established (usually a few seconds, but may require reboot).
+
+Flush the network routing table. Clears all routes including the default gateway.
 
 Runs: sudo route -n flush
 
-Use this when you notice network slowness or routing errors after switching networks.`,
+Only use this when you have confirmed routing issues after switching networks. In most cases, optimac_flush_dns is sufficient.`,
       inputSchema: {},
       annotations: {
         readOnlyHint: false,
-        destructiveHint: false,
+        destructiveHint: true,
         idempotentHint: true,
         openWorldHint: false,
       },
@@ -121,7 +123,8 @@ Use this when you notice network slowness or routing errors after switching netw
           type: "text",
           text: JSON.stringify({
             status: result.exitCode === 0 ? "success" : "error",
-            message: result.exitCode === 0 ? "Routing table flushed" : result.stderr,
+            message: result.exitCode === 0 ? "Routing table flushed. Network connectivity may take a few seconds to recover." : result.stderr,
+            warning: "If connectivity does not recover, reboot or run: sudo route add default <gateway-ip>",
           }, null, 2),
         }],
       };
@@ -584,15 +587,18 @@ Presets:
     "optimac_network_reset",
     {
       title: "Full Network Reset",
-      description: `Perform a complete network reset: flush DNS, flush routes, reset mDNSResponder, and optionally set fast DNS.
+      description: `⚠️ CAUTION: This will temporarily DISRUPT network connectivity.
 
-Use this when experiencing connectivity issues, high latency to APIs, or after switching networks.`,
+Performs: flush DNS, restart mDNSResponder, and optionally set fast DNS (Cloudflare 1.1.1.1).
+Note: Route flushing has been removed from this tool as it is rarely needed and can cause prolonged outages.
+
+Use optimac_flush_dns first — it solves most DNS/connectivity issues without risk.`,
       inputSchema: {
         set_fast_dns: z.boolean().default(true).describe("Also set DNS to Cloudflare 1.1.1.1"),
       },
       annotations: {
         readOnlyHint: false,
-        destructiveHint: false,
+        destructiveHint: true,
         idempotentHint: true,
         openWorldHint: false,
       },
@@ -608,9 +614,10 @@ Use this when experiencing connectivity issues, high latency to APIs, or after s
       const mdns = await runCommand("sudo", ["killall", "-HUP", "mDNSResponder"], { shell: true });
       results["mDNSResponder"] = mdns.exitCode === 0 ? "restarted" : mdns.stderr;
 
-      // Flush routes
-      const routes = await runCommand("sudo", ["route", "-n", "flush"], { shell: true });
-      results["routes"] = routes.exitCode === 0 ? "flushed" : routes.stderr;
+      // Routes: READ-ONLY check instead of flush (flush drops all routes and kills connectivity)
+      const routeCheck = await runCommand("netstat", ["-rn"]);
+      const routeCount = routeCheck.stdout.split("\n").filter(Boolean).length - 1;
+      results["routes"] = `healthy (${routeCount} routes, not flushed — use optimac_flush_routes if truly needed)`;
 
       // Optionally set fast DNS
       if (set_fast_dns) {
@@ -819,6 +826,273 @@ Actions:
           }, null, 2),
         }],
       };
+    }
+  );
+
+  // ---- LIST LOGIN ITEMS ----
+  server.registerTool(
+    "optimac_sys_login_items",
+    {
+      title: "List Login Items",
+      description: "List all applications and items configured to launch at login.",
+      inputSchema: {},
+    },
+    async () => {
+      const script = 'tell application "System Events" to get the name of every login item';
+      const result = await runCommand("osascript", ["-e", script]);
+
+      const items = result.stdout.split(",").map((s) => s.trim()).filter((s) => s);
+
+      return {
+        content: [{
+          type: "text",
+          text: JSON.stringify({
+            count: items.length,
+            items,
+          }, null, 2),
+        }],
+      };
+    }
+  );
+
+  // ---- EJECT DRIVES ----
+  server.registerTool(
+    "optimac_sys_eject",
+    {
+      title: "Eject All Drives",
+      description: "Unmount and eject all external drives and volumes.",
+      inputSchema: {},
+      annotations: { destructiveHint: true },
+    },
+    async () => {
+      const script = 'tell application "Finder" to eject (every disk whose ejectable is true)';
+      const result = await runCommand("osascript", ["-e", script]);
+
+      return {
+        content: [{
+          type: "text",
+          text: result.exitCode === 0
+            ? "All ejectable drives ejected"
+            : `Failed to eject: ${result.stderr}`,
+        }],
+      };
+    }
+  );
+
+  // ---- LOCK SCREEN ----
+  server.registerTool(
+    "optimac_sys_lock",
+    {
+      title: "Lock Screen",
+      description: "Immediately lock the screen (sleep display).",
+      inputSchema: {},
+    },
+    async () => {
+      const result = await runCommand("pmset", ["displaysleepnow"]);
+      return {
+        content: [{
+          type: "text",
+          text: result.exitCode === 0 ? "Screen locked" : `Failed: ${result.stderr}`,
+        }],
+      };
+    }
+  );
+
+  // ---- RESTART SYSTEM SERVICES ----
+  server.registerTool(
+    "optimac_sys_restart_service",
+    {
+      title: "Restart System Service",
+      description: "Restart a key system service (Finder, Dock, SystemUIServer).",
+      inputSchema: {
+        service: z.enum(["Finder", "Dock", "SystemUIServer"]).describe("Service to restart"),
+      },
+      annotations: { destructiveHint: true },
+    },
+    async ({ service }) => {
+      const result = await runCommand("killall", [service]);
+      return {
+        content: [{
+          type: "text",
+          text: result.exitCode === 0 ? `${service} restarted` : `Failed: ${result.stderr}`,
+        }],
+      };
+    }
+  );
+
+  // ---- EMPTY TRASH ----
+  server.registerTool(
+    "optimac_sys_trash",
+    {
+      title: "Empty Trash",
+      description: "Permanently empty the Trash. CAUTION: This operation cannot be undone.",
+      inputSchema: {},
+      annotations: { destructiveHint: true },
+    },
+    async () => {
+      const script = 'tell application "Finder" to empty trash';
+      const result = await runCommand("osascript", ["-e", script]);
+
+      return {
+        content: [{
+          type: "text",
+          text: result.exitCode === 0
+            ? "Trash emptied successfully"
+            : `Failed (User may need to approve Finder interaction): ${result.stderr}`,
+        }],
+      };
+    }
+  );
+
+  // ---- APPLY POWER PROFILE ----
+  server.registerTool(
+    "optimac_power_profile",
+    {
+      title: "Apply Power Profile",
+      description: `Apply a predefined power profile via pmset.
+
+performance — AI server mode: no sleep, Wake-on-LAN, auto-restart.
+balanced — moderate sleep, WoL on, auto-restart, no Power Nap.
+efficiency — aggressive sleep, low power mode enabled.`,
+      inputSchema: {
+        profile: z.enum(["performance", "balanced", "efficiency"]).describe("Power profile to apply"),
+      },
+      annotations: { destructiveHint: true },
+    },
+    async ({ profile }) => {
+      const profiles: Record<string, string[]> = {
+        performance: ["displaysleep 0", "sleep 0", "disksleep 0", "gpuswitch 2", "womp 1", "autorestart 1", "ttyskeepawake 1", "powernap 0"],
+        balanced: ["displaysleep 10", "sleep 0", "disksleep 10", "gpuswitch 2", "womp 1", "autorestart 1", "powernap 0"],
+        efficiency: ["displaysleep 5", "sleep 10", "disksleep 5", "gpuswitch 0", "lowpowermode 1", "powernap 0"],
+      };
+
+      const results: Record<string, string> = {};
+      for (const setting of profiles[profile]) {
+        const [key, val] = setting.split(" ");
+        const r = await runCommand("sudo", ["pmset", "-a", key, val], { shell: true });
+        results[key] = r.exitCode === 0 ? val : `FAILED: ${r.stderr}`;
+      }
+
+      const failed = Object.values(results).some((v) => v.startsWith("FAILED"));
+      return {
+        content: [{
+          type: "text",
+          text: JSON.stringify({
+            status: failed ? "partial_failure" : "success",
+            profile,
+            settings: results,
+          }, null, 2),
+        }],
+      };
+    }
+  );
+
+  // ---- DEBLOAT RE-ENABLE ----
+  server.registerTool(
+    "optimac_debloat_reenable",
+    {
+      title: "Re-enable Disabled Services",
+      description: "Re-enable all previously disabled macOS services from debloat presets.",
+      inputSchema: {},
+      annotations: { destructiveHint: true },
+    },
+    async () => {
+      const config = loadConfig();
+      const disabled = config.disabledServices || [];
+      if (disabled.length === 0) {
+        return { content: [{ type: "text", text: "No disabled services found. Nothing to re-enable." }] };
+      }
+
+      const uidResult = await runCommand("id", ["-u"]);
+      const uid = uidResult.stdout.trim() || "501";
+
+      const results: Record<string, string> = {};
+      for (const svc of disabled) {
+        const r = await runCommand("sudo", ["launchctl", "enable", `user/${uid}/${svc}`], { shell: true, timeout: 10000 });
+        results[svc] = r.exitCode === 0 ? "re-enabled" : `FAILED: ${r.stderr}`;
+      }
+
+      // Only clear successfully re-enabled services; keep failed ones for retry
+      const stillFailed = disabled.filter((svc) => results[svc].startsWith("FAILED"));
+      config.disabledServices = stillFailed;
+      saveConfig(config);
+
+      const successCount = disabled.length - stillFailed.length;
+      return {
+        content: [{
+          type: "text",
+          text: JSON.stringify({
+            status: stillFailed.length === 0 ? "success" : "partial_failure",
+            reEnabled: successCount,
+            failed: stillFailed.length,
+            details: results,
+          }, null, 2),
+        }],
+      };
+    }
+  );
+
+  // ---- REBUILD SPOTLIGHT ----
+  server.registerTool(
+    "optimac_rebuild_spotlight",
+    {
+      title: "Rebuild Spotlight Index",
+      description: "Erase and rebuild Spotlight search index. Indexing may take 30-60 minutes.",
+      inputSchema: {},
+      annotations: { destructiveHint: true },
+    },
+    async () => {
+      const result = await runCommand("sudo", ["mdutil", "-E", "/"], { shell: true, timeout: 15000 });
+      if (result.exitCode !== 0) {
+        return { content: [{ type: "text", text: `Failed (may need sudo): ${result.stderr}` }], isError: true };
+      }
+      return { content: [{ type: "text", text: `Spotlight index rebuild started. May take 30-60 minutes.\n${result.stdout}` }] };
+    }
+  );
+
+  // ---- OPTIMIZE HOMEBREW ----
+  server.registerTool(
+    "optimac_optimize_homebrew",
+    {
+      title: "Optimize Homebrew",
+      description: "Run Homebrew cleanup (prune 7 days) and autoremove unused dependencies.",
+      inputSchema: {},
+      annotations: { destructiveHint: true },
+    },
+    async () => {
+      // Check well-known Homebrew paths directly (which/shell may not have full PATH)
+      const brewPaths = ["/opt/homebrew/bin/brew", "/usr/local/bin/brew"];
+      let brewPath = "";
+      for (const p of brewPaths) {
+        try {
+          const { accessSync } = await import("fs");
+          accessSync(p);
+          brewPath = p;
+          break;
+        } catch { /* not at this path */ }
+      }
+
+      if (!brewPath) {
+        // Fallback: try which in case of custom install
+        const whichBrew = await runCommand("which", ["brew"], { shell: true, timeout: 5000 });
+        brewPath = whichBrew.exitCode === 0 ? whichBrew.stdout.trim() : "";
+      }
+
+      if (!brewPath) {
+        return { content: [{ type: "text", text: "Homebrew is not installed. Install from https://brew.sh" }], isError: true };
+      }
+      const cleanup = await runCommand(brewPath, ["cleanup", "--prune=7"], { timeout: 120000 });
+      const autoremove = await runCommand(brewPath, ["autoremove"], { timeout: 60000 });
+
+      const body = [
+        "── Cleanup ──",
+        cleanup.stdout || "(nothing to clean)",
+        "",
+        "── Autoremove ──",
+        autoremove.stdout || "(nothing to remove)",
+      ].join("\n");
+
+      return { content: [{ type: "text", text: body }] };
     }
   );
 }
