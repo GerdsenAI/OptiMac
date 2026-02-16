@@ -231,7 +231,7 @@ async def run_tests():
     baseline = get_system_snapshot()
 
     print("=" * 70)
-    print(f"  BASELINE SYSTEM STATE")
+    print("  BASELINE SYSTEM STATE")
     print("=" * 70)
     print(format_snapshot(baseline))
     print()
