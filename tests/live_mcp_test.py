@@ -9,8 +9,6 @@ Skips: network tools, sudo-requiring tools, destructive tools.
 """
 
 import asyncio
-import json
-import os
 import sys
 import time
 import subprocess
@@ -18,7 +16,7 @@ from datetime import datetime
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent.parent))
-from gerdsenai_optimac.mcp.client import MCPClient
+from gerdsenai_optimac.mcp.client import MCPClient  # noqa: E402
 
 # ── Safe tools to test (no sudo, no network, no destructive) ──────────
 SAFE_TOOLS = [
@@ -100,7 +98,7 @@ def get_system_snapshot():
         free = stats.get("Pages free", 0)
         active = stats.get("Pages active", 0)
         inactive = stats.get("Pages inactive", 0)
-        speculative = stats.get("Pages speculative", 0)
+        stats.get("Pages speculative", 0)  # read but not used directly
         wired = stats.get("Pages wired down", 0)
         compressed = stats.get("Pages occupied by compressor", 0)
         purgeable = stats.get("Pages purgeable", 0)
@@ -183,7 +181,9 @@ def diff_snapshot(before, after):
         free_delta = round(am["free_gb"] - bm["free_gb"], 3)
         pressure_delta = round(am["pressure_pct"] - bm["pressure_pct"], 1)
 
-        sign = lambda v: f"+{v}" if v > 0 else str(v)
+        def sign(v):
+            return f"+{v}" if v > 0 else str(v)
+
         deltas.append(
             f"  Δ Used: {sign(used_delta)}GB | Δ Free: {sign(free_delta)}GB | "
             f"Δ Pressure: {sign(pressure_delta)}%"
@@ -230,9 +230,9 @@ async def run_tests():
     overall_start = time.time()
     baseline = get_system_snapshot()
 
-    print(f"{'='*70}")
+    print("=" * 70)
     print(f"  BASELINE SYSTEM STATE")
-    print(f"{'='*70}")
+    print("=" * 70)
     print(format_snapshot(baseline))
     print()
 
@@ -348,41 +348,41 @@ async def run_tests():
     skipped = sum(1 for r in results if r["status"] == "SKIP")
 
     md = []
-    md.append(f"# OptiMac MCP Live Test Results")
-    md.append(f"")
+    md.append("# OptiMac MCP Live Test Results")
+    md.append("")
     md.append(f"**Date:** {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
     md.append(f"**Duration:** {overall_duration}s")
     md.append(
         f"**Tools Tested:** {len(SAFE_TOOLS)} (safe, non-network, non-destructive)"
     )
     md.append(f"**Server Tools Available:** {len(tools)}")
-    md.append(f"")
-    md.append(f"## Summary")
-    md.append(f"| Status | Count |")
-    md.append(f"|--------|-------|")
+    md.append("")
+    md.append("## Summary")
+    md.append("| Status | Count |")
+    md.append("|--------|-------|")
     md.append(f"| ✅ PASS | {passed} |")
     md.append(f"| ❌ FAIL | {failed} |")
     md.append(f"| ⏰ TIMEOUT/ERROR | {errors} |")
     md.append(f"| ⏭ SKIP | {skipped} |")
-    md.append(f"")
+    md.append("")
 
-    md.append(f"## System State")
-    md.append(f"")
-    md.append(f"### Baseline (Before Tests)")
-    md.append(f"```")
+    md.append("## System State")
+    md.append("")
+    md.append("### Baseline (Before Tests)")
+    md.append("```")
     md.append(format_snapshot(baseline, "Start"))
-    md.append(f"```")
-    md.append(f"")
-    md.append(f"### Final (After All Tests)")
-    md.append(f"```")
+    md.append("```")
+    md.append("")
+    md.append("### Final (After All Tests)")
+    md.append("```")
     md.append(format_snapshot(final, "End"))
-    md.append(f"```")
-    md.append(f"")
-    md.append(f"### Overall Delta")
-    md.append(f"```")
+    md.append("```")
+    md.append("")
+    md.append("### Overall Delta")
+    md.append("```")
     md.append(diff_snapshot(baseline, final))
-    md.append(f"```")
-    md.append(f"")
+    md.append("```")
+    md.append("")
 
     # Per-category results
     categories = {}
@@ -394,7 +394,7 @@ async def run_tests():
 
     for cat, cat_results in categories.items():
         md.append(f"## {cat}")
-        md.append(f"")
+        md.append("")
 
         for r in cat_results:
             status_icon = {
@@ -412,24 +412,24 @@ async def run_tests():
                 md.append(f"**Reason:** {r['reason']}")
 
             if r.get("delta"):
-                md.append(f"**System Impact:**")
-                md.append(f"```")
+                md.append("**System Impact:**")
+                md.append("```")
                 md.append(r["delta"])
-                md.append(f"```")
+                md.append("```")
 
             if r.get("output"):
                 # Truncate very long outputs
                 out = r["output"]
                 if len(out) > 1500:
                     out = out[:1500] + "\n... (truncated)"
-                md.append(f"<details><summary>Output</summary>")
-                md.append(f"")
-                md.append(f"```json")
+                md.append("<details><summary>Output</summary>")
+                md.append("")
+                md.append("```json")
                 md.append(out)
-                md.append(f"```")
-                md.append(f"</details>")
+                md.append("```")
+                md.append("</details>")
 
-            md.append(f"")
+            md.append("")
 
     # Write file
     results_path = Path(__file__).parent / "test_results.md"
@@ -437,7 +437,7 @@ async def run_tests():
     print(f"\n{'='*70}")
     print(f"  Results written to: {results_path}")
     print(f"  {passed} passed, {failed} failed, {errors} errors, {skipped} skipped")
-    print(f"{'='*70}")
+    print("=" * 70)
 
 
 if __name__ == "__main__":

@@ -11,8 +11,6 @@ Tools tested:
 """
 
 import asyncio
-import json
-import os
 import subprocess
 import sys
 import time
@@ -20,7 +18,7 @@ from datetime import datetime
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent.parent))
-from gerdsenai_optimac.mcp.client import MCPClient
+from gerdsenai_optimac.mcp.client import MCPClient  # noqa: E402
 
 
 def run(cmd, args=None):
@@ -96,8 +94,8 @@ def snapshot_gpu():
             timeout=10,
         )
         lines = gpu.stdout.split("\n")
-        active_line = [l for l in lines if "active residency" in l.lower()]
-        freq_line = [l for l in lines if "active frequency" in l.lower()]
+        active_line = [line for line in lines if "active residency" in line.lower()]
+        freq_line = [line for line in lines if "active frequency" in line.lower()]
         return {
             "frequency": freq_line[0].strip() if freq_line else "N/A",
             "residency": active_line[0].strip() if active_line else "N/A",
@@ -118,7 +116,10 @@ def snapshot_all():
 
 def fmt_delta_mem(before, after):
     """Format memory deltas."""
-    sign = lambda v: f"+{v}" if v > 0 else str(v)
+
+    def sign(v):
+        return f"+{v}" if v > 0 else str(v)
+
     return (
         f"Δ Used: {sign(after['used_mb'] - before['used_mb'])}MB | "
         f"Δ Free: {sign(after['free_mb'] - before['free_mb'])}MB | "
@@ -132,7 +133,10 @@ def fmt_delta_disk(before, after):
     """Format disk deltas."""
     if "error" in before or "error" in after:
         return "disk snapshot error"
-    sign = lambda v: f"+{v}" if v > 0 else str(v)
+
+    def sign(v):
+        return f"+{v}" if v > 0 else str(v)
+
     return (
         f"Δ Used: {sign(after['used_mb'] - before['used_mb'])}MB | "
         f"Δ Available: {sign(after['avail_mb'] - before['avail_mb'])}MB"
@@ -205,7 +209,9 @@ async def main():
         f"  Memory: {m['used_mb']}MB used / {m['total_mb']}MB ({m['pressure_pct']}% pressure)"
     )
     print(
-        f"          Free: {m['free_mb']}MB | Inactive: {m['inactive_mb']}MB | Purgeable: {m['purgeable_mb']}MB"
+        f"          Free: {m['free_mb']}MB "
+        f"| Inactive: {m['inactive_mb']}MB "
+        f"| Purgeable: {m['purgeable_mb']}MB"
     )
     print(
         f"  Disk:   {d['used_mb']}MB used / {d['total_mb']}MB ({d['avail_mb']}MB available)"
@@ -216,9 +222,9 @@ async def main():
     md_lines = []
     md_lines.append("# Optimization MCP Tools — Live Test Results")
     md_lines.append(f"\n**Date:** {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
-    md_lines.append(f"\n## System Baseline")
-    md_lines.append(f"| Metric | Value |")
-    md_lines.append(f"|--------|-------|")
+    md_lines.append("\n## System Baseline")
+    md_lines.append("| Metric | Value |")
+    md_lines.append("|--------|-------|")
     md_lines.append(
         f"| Memory Used | {m['used_mb']}MB / {m['total_mb']}MB ({m['pressure_pct']}%) |"
     )
@@ -235,7 +241,7 @@ async def main():
         name = tool["name"]
         label = tool["label"]
         desc = tool["desc"]
-        metric = tool["metric"]
+        metric = tool["metric"]  # noqa: F841 — used for categorization
 
         print(f"{'─'*80}")
         print(f"  [{i+1}/4] {label}")
@@ -243,7 +249,7 @@ async def main():
         print(f"{'─'*80}")
 
         if name not in tool_names:
-            print(f"  ⏭ SKIPPED — not registered\n")
+            print("  ⏭ SKIPPED — not registered\n")
             continue
 
         # Before
@@ -251,13 +257,17 @@ async def main():
         bm = before["memory"]
         bd = before["disk"]
         print(
-            f"  BEFORE: Memory {bm['used_mb']}MB used ({bm['pressure_pct']}% pressure) "
-            f"| Free {bm['free_mb']}MB | Purgeable {bm['purgeable_mb']}MB"
+            f"  BEFORE: Memory {bm['used_mb']}MB used "
+            f"({bm['pressure_pct']}% pressure) "
+            f"| Free {bm['free_mb']}MB "
+            f"| Purgeable {bm['purgeable_mb']}MB"
         )
-        print(f"          Disk {bd['used_mb']}MB used | {bd['avail_mb']}MB available")
+        print(
+            f"          Disk {bd['used_mb']}MB used " f"| {bd['avail_mb']}MB available"
+        )
 
         # Execute
-        print(f"  ⏳ Executing...", end="", flush=True)
+        print(f"  ⏳ Executing...", end="", flush=True)  # noqa: F541
         start = time.time()
 
         try:
@@ -312,43 +322,57 @@ async def main():
             )
             md_lines.append(f"**Tool:** `{name}` | **Duration:** {duration}s")
             md_lines.append(f"\n**Description:** {desc}")
-            md_lines.append(f"\n### Before/After")
-            md_lines.append(f"| Metric | Before | After | Delta |")
-            md_lines.append(f"|--------|--------|-------|-------|")
+            md_lines.append("\n### Before/After")
+            md_lines.append("| Metric | Before | After | Delta |")
+            md_lines.append("|--------|--------|-------|-------|")
+            used_d = am["used_mb"] - bm["used_mb"]
             md_lines.append(
-                f"| Memory Used | {bm['used_mb']}MB | {am['used_mb']}MB | **{am['used_mb']-bm['used_mb']:+d}MB** |"
+                f"| Memory Used | {bm['used_mb']}MB "
+                f"| {am['used_mb']}MB | **{used_d:+d}MB** |"
             )
+            free_d = am["free_mb"] - bm["free_mb"]
             md_lines.append(
-                f"| Memory Free | {bm['free_mb']}MB | {am['free_mb']}MB | **{am['free_mb']-bm['free_mb']:+d}MB** |"
+                f"| Memory Free | {bm['free_mb']}MB "
+                f"| {am['free_mb']}MB | **{free_d:+d}MB** |"
             )
+            inact_d = am["inactive_mb"] - bm["inactive_mb"]
             md_lines.append(
-                f"| Memory Inactive | {bm['inactive_mb']}MB | {am['inactive_mb']}MB | **{am['inactive_mb']-bm['inactive_mb']:+d}MB** |"
+                f"| Memory Inactive | {bm['inactive_mb']}MB "
+                f"| {am['inactive_mb']}MB | **{inact_d:+d}MB** |"
             )
+            purge_d = am["purgeable_mb"] - bm["purgeable_mb"]
             md_lines.append(
-                f"| Memory Purgeable | {bm['purgeable_mb']}MB | {am['purgeable_mb']}MB | **{am['purgeable_mb']-bm['purgeable_mb']:+d}MB** |"
+                f"| Memory Purgeable | {bm['purgeable_mb']}MB "
+                f"| {am['purgeable_mb']}MB | **{purge_d:+d}MB** |"
             )
+            press_d = am["pressure_pct"] - bm["pressure_pct"]
             md_lines.append(
-                f"| Pressure | {bm['pressure_pct']}% | {am['pressure_pct']}% | **{am['pressure_pct']-bm['pressure_pct']:+.1f}%** |"
+                f"| Pressure | {bm['pressure_pct']}% "
+                f"| {am['pressure_pct']}% | **{press_d:+.1f}%** |"
             )
+            disk_d = ad["used_mb"] - bd["used_mb"]
             md_lines.append(
-                f"| Disk Used | {bd['used_mb']}MB | {ad['used_mb']}MB | **{ad['used_mb']-bd['used_mb']:+d}MB** |"
+                f"| Disk Used | {bd['used_mb']}MB "
+                f"| {ad['used_mb']}MB | **{disk_d:+d}MB** |"
             )
+            avail_d = ad["avail_mb"] - bd["avail_mb"]
             md_lines.append(
-                f"| Disk Available | {bd['avail_mb']}MB | {ad['avail_mb']}MB | **{ad['avail_mb']-bd['avail_mb']:+d}MB** |"
+                f"| Disk Available | {bd['avail_mb']}MB "
+                f"| {ad['avail_mb']}MB | **{avail_d:+d}MB** |"
             )
 
-            md_lines.append(f"\n<details><summary>Tool Output</summary>\n")
+            md_lines.append("\n<details><summary>Tool Output</summary>\n")
             md_lines.append(f"```json\n{output[:2000]}\n```")
-            md_lines.append(f"</details>\n")
+            md_lines.append("</details>\n")
 
         except asyncio.TimeoutError:
-            print(f"\r  ⏰ TIMEOUT (60s)")
+            print("\r  ⏰ TIMEOUT (60s)")
             all_passed = False
             md_lines.append(f"## {i+1}. {label} — TIMEOUT ⏰\n")
 
         except Exception as e:
             print(f"\r  ❌ ERROR: {e}")
-            all_passed = False
+            all_passed = False  # noqa: F841
             md_lines.append(f"## {i+1}. {label} — ERROR: {e}\n")
 
     # Final system state
@@ -365,7 +389,9 @@ async def main():
         f"  Memory: {fm['used_mb']}MB used / {fm['total_mb']}MB ({fm['pressure_pct']}% pressure)"
     )
     print(
-        f"          Free: {fm['free_mb']}MB | Inactive: {fm['inactive_mb']}MB | Purgeable: {fm['purgeable_mb']}MB"
+        f"          Free: {fm['free_mb']}MB "
+        f"| Inactive: {fm['inactive_mb']}MB "
+        f"| Purgeable: {fm['purgeable_mb']}MB"
     )
     print(
         f"  Disk:   {fd['used_mb']}MB used / {fd['total_mb']}MB ({fd['avail_mb']}MB available)"
@@ -373,29 +399,39 @@ async def main():
     print()
     total_mem_delta = fmt_delta_mem(bm_base, fm)
     total_disk_delta = fmt_delta_disk(bd_base, fd)
-    print(f"  OVERALL DELTA (baseline → final):")
+    print("  OVERALL DELTA (baseline → final):")
     print(f"    {total_mem_delta}")
     print(f"    {total_disk_delta}")
     print()
 
     # Write final summary
-    md_lines.append(f"## Overall Impact (Baseline → Final)")
-    md_lines.append(f"| Metric | Baseline | Final | Net Delta |")
-    md_lines.append(f"|--------|----------|-------|-----------|")
+    md_lines.append("## Overall Impact (Baseline → Final)")
+    md_lines.append("| Metric | Baseline | Final | Net Delta |")
+    md_lines.append("|--------|----------|-------|-----------|")
+    used_d = fm["used_mb"] - bm_base["used_mb"]
     md_lines.append(
-        f"| Memory Used | {bm_base['used_mb']}MB | {fm['used_mb']}MB | **{fm['used_mb']-bm_base['used_mb']:+d}MB** |"
+        f"| Memory Used | {bm_base['used_mb']}MB "
+        f"| {fm['used_mb']}MB | **{used_d:+d}MB** |"
     )
+    free_d = fm["free_mb"] - bm_base["free_mb"]
     md_lines.append(
-        f"| Memory Free | {bm_base['free_mb']}MB | {fm['free_mb']}MB | **{fm['free_mb']-bm_base['free_mb']:+d}MB** |"
+        f"| Memory Free | {bm_base['free_mb']}MB "
+        f"| {fm['free_mb']}MB | **{free_d:+d}MB** |"
     )
+    press_d = fm["pressure_pct"] - bm_base["pressure_pct"]
     md_lines.append(
-        f"| Memory Pressure | {bm_base['pressure_pct']}% | {fm['pressure_pct']}% | **{fm['pressure_pct']-bm_base['pressure_pct']:+.1f}%** |"
+        f"| Memory Pressure | {bm_base['pressure_pct']}% "
+        f"| {fm['pressure_pct']}% | **{press_d:+.1f}%** |"
     )
+    disk_d = fd["used_mb"] - bd_base["used_mb"]
     md_lines.append(
-        f"| Disk Used | {bd_base['used_mb']}MB | {fd['used_mb']}MB | **{fd['used_mb']-bd_base['used_mb']:+d}MB** |"
+        f"| Disk Used | {bd_base['used_mb']}MB "
+        f"| {fd['used_mb']}MB | **{disk_d:+d}MB** |"
     )
+    avail_d = fd["avail_mb"] - bd_base["avail_mb"]
     md_lines.append(
-        f"| Disk Available | {bd_base['avail_mb']}MB | {fd['avail_mb']}MB | **{fd['avail_mb']-bd_base['avail_mb']:+d}MB** |"
+        f"| Disk Available | {bd_base['avail_mb']}MB "
+        f"| {fd['avail_mb']}MB | **{avail_d:+d}MB** |"
     )
     md_lines.append("")
 

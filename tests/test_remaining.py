@@ -12,7 +12,7 @@ from datetime import datetime
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent.parent))
-from gerdsenai_optimac.mcp.client import MCPClient
+from gerdsenai_optimac.mcp.client import MCPClient  # noqa: E402
 
 
 def mem():
@@ -111,7 +111,15 @@ TOOLS = [
     (
         "optimac_model_summarize",
         {
-            "text": "Quantum computing uses qubits that can be in superposition of 0 and 1 simultaneously, enabling parallel computation. This differs from classical bits which must be either 0 or 1. Quantum entanglement allows qubits to be correlated, providing exponential speedup for certain algorithms like Shor's factoring and Grover's search.",
+            "text": (
+                "Quantum computing uses qubits that can be in "
+                "superposition of 0 and 1 simultaneously, enabling "
+                "parallel computation. This differs from classical bits "
+                "which must be either 0 or 1. Quantum entanglement allows "
+                "qubits to be correlated, providing exponential speedup "
+                "for certain algorithms like Shor's factoring and "
+                "Grover's search."
+            ),
             "model": "llama3:latest",
         },
         "ModelTask",
@@ -287,7 +295,7 @@ async def main():
     Path(__file__).parent.joinpath("remaining_tools_results.md").write_text(
         "\n".join(md)
     )
-    print(f"\nResults written to tests/remaining_tools_results.md")
+    print("\nResults written to tests/remaining_tools_results.md")
 
     await client.disconnect()
 

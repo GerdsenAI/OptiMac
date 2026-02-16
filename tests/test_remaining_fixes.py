@@ -8,7 +8,7 @@ import time
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent.parent))
-from gerdsenai_optimac.mcp.client import MCPClient
+from gerdsenai_optimac.mcp.client import MCPClient  # noqa: E402
 
 
 def mem():

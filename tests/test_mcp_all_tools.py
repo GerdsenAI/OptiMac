@@ -15,7 +15,7 @@ from datetime import datetime
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent.parent))
-from gerdsenai_optimac.mcp.client import MCPClient
+from gerdsenai_optimac.mcp.client import MCPClient  # noqa: E402
 
 # Paths used by test fixtures
 HOME = os.path.expanduser("~")
@@ -172,7 +172,8 @@ TOOL_DEFINITIONS = {
             "args": {"path": "/tmp/models"},
         },
         {"name": "optimac_model_dir_get", "safe": True, "sudo": False, "args": {}},
-        # ── FIXED: was "model"+"sizeGB" → correct params are "size_gb" (required) + "model_name" (optional)
+        # ── FIXED: was "model"+"sizeGB" → correct params
+        # are "size_gb" (required) + "model_name" (optional)
         {
             "name": "optimac_model_ram_check",
             "safe": True,
@@ -609,7 +610,8 @@ class MCPTester:
 
 **Test Date:** {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}
 **Total Tools:** {summary['total']}
-**Status:** ✅ {summary['passed']} PASS | ❌ {summary['failed']} FAIL | ⏭️ {summary['skipped']} SKIP | ⚠️ {summary['error']} ERROR
+**Status:** ✅ {summary['passed']} PASS | ❌ {summary['failed']} FAIL \
+⏭️ {summary['skipped']} SKIP | ⚠️ {summary['error']} ERROR
 
 ## Summary by Category
 
@@ -635,7 +637,11 @@ class MCPTester:
                     f"{result['durationMs']:.0f}ms" if result["durationMs"] > 0 else "-"
                 )
                 reason = result.get("reason", "")[:50]
-                md += f"| `{result['tool']}` | {status_icon} {result['status']} | {duration} | {reason} |\n"
+                md += (
+                    f"| `{result['tool']}` | {status_icon} "
+                    f"{result['status']} | {duration} "
+                    f"| {reason} |\n"
+                )
 
             md += "\n"
 
@@ -653,14 +659,14 @@ class MCPTester:
             f.write(md)
 
         print(f"\n{'='*60}")
-        print(f"Test Results Summary:")
+        print("Test Results Summary:")
         print(f"  PASS:    {summary['passed']:3d}")
         print(f"  FAIL:    {summary['failed']:3d}")
         print(f"  SKIP:    {summary['skipped']:3d}")
         print(f"  ERROR:   {summary['error']:3d}")
         print(f"  TOTAL:   {summary['total']:3d}")
         print(f"{'='*60}")
-        print(f"\n✓ Reports saved:")
+        print("\n✓ Reports saved:")
         print(f"  - {json_path}")
         print(f"  - {md_path}")
 

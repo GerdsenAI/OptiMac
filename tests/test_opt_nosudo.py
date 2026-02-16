@@ -5,11 +5,11 @@ import asyncio
 import subprocess
 import sys
 import time
-from datetime import datetime
+
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent.parent))
-from gerdsenai_optimac.mcp.client import MCPClient
+from gerdsenai_optimac.mcp.client import MCPClient  # noqa: E402
 
 
 def snapshot():
@@ -97,7 +97,9 @@ async def main():
         print(f"── {tool['label']} ──")
         print(f"  {tool['desc']}")
         print(
-            f"  BEFORE: Mem {before['mem_used']}MB used ({before['pressure']}%) | Free {before['mem_free']}MB | Disk {before['disk_avail']}MB avail"
+            f"  BEFORE: Mem {before['mem_used']}MB used "
+            f"({before['pressure']}%) | Free {before['mem_free']}MB "
+            f"| Disk {before['disk_avail']}MB avail"
         )
 
         start = time.time()
@@ -118,22 +120,31 @@ async def main():
             icon = "❌" if is_err else "✅"
             print(f"  {icon} ({dur}s)")
             print(
-                f"  AFTER:  Mem {after['mem_used']}MB used ({after['pressure']}%) | Free {after['mem_free']}MB | Disk {after['disk_avail']}MB avail"
+                f"  AFTER:  Mem {after['mem_used']}MB used "
+                f"({after['pressure']}%) | Free {after['mem_free']}MB "
+                f"| Disk {after['disk_avail']}MB avail"
             )
 
-            s = lambda v: f"+{v}" if v > 0 else str(v)
+            def sign(v):
+                return f"+{v}" if v > 0 else str(v)
+
+            mem_d = after["mem_used"] - before["mem_used"]
+            free_d = after["mem_free"] - before["mem_free"]
+            p_d = round(after["pressure"] - before["pressure"], 1)
             print(
-                f"  DELTA:  Mem Used {s(after['mem_used']-before['mem_used'])}MB | Free {s(after['mem_free']-before['mem_free'])}MB | Pressure {s(round(after['pressure']-before['pressure'],1))}%"
+                f"  DELTA:  Mem Used {sign(mem_d)}MB"
+                f" | Free {sign(free_d)}MB"
+                f" | Pressure {sign(p_d)}%"
             )
-            print(
-                f"          Disk Used {s(after['disk_used']-before['disk_used'])}MB | Avail {s(after['disk_avail']-before['disk_avail'])}MB"
-            )
+            disk_d = after["disk_used"] - before["disk_used"]
+            avail_d = after["disk_avail"] - before["disk_avail"]
+            print(f"          Disk Used {sign(disk_d)}MB" f" | Avail {sign(avail_d)}MB")
 
             # Show output preview
             preview = output[:300].replace("\n", "\n  ")
             print(f"  OUTPUT:\n  {preview}")
             if is_err:
-                print(f"  ⚠️ Tool returned error flag")
+                print("  ⚠️ Tool returned error flag")
         except Exception as e:
             print(f"  ❌ {e}")
         print()

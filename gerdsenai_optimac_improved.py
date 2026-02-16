@@ -156,9 +156,7 @@ class AppleSiliconMonitor:
                     timeout=5,
                 )
                 if "Total Number of Cores" in result.stdout:
-                    match = re.search(
-                        r"Total Number of Cores:\s*(\d+)", result.stdout
-                    )
+                    match = re.search(r"Total Number of Cores:\s*(\d+)", result.stdout)
                     if match:
                         actual_cores = int(match.group(1))
                         if model in capabilities:
@@ -298,16 +296,12 @@ class StressTestEngine:
         while running and (time.time() - start_time) < duration:
             n = 982451653
             all(n % i != 0 for i in range(2, int(math.sqrt(n)) + 1))
-            sum(
-                math.sin(i) * math.cos(i) * math.sqrt(i + 1) for i in range(1000)
-            )
+            sum(math.sin(i) * math.cos(i) * math.sqrt(i + 1) for i in range(1000))
             if operations % 10 == 0:
                 a = [[random.random() for _ in range(50)] for _ in range(50)]
                 b = [[random.random() for _ in range(50)] for _ in range(50)]
                 [
-                    [
-                        sum(a[i][k] * b[k][j] for k in range(50)) for j in range(25)
-                    ]
+                    [sum(a[i][k] * b[k][j] for k in range(50)) for j in range(25)]
                     for i in range(25)
                 ]
             running = not stop_event.is_set()
@@ -405,9 +399,7 @@ class AIStackManager:
             )
             return "Ollama server stopped"
         elif service_name == "lmstudio":
-            subprocess.run(
-                ["lms", "server", "stop"], capture_output=True, timeout=5
-            )
+            subprocess.run(["lms", "server", "stop"], capture_output=True, timeout=5)
             return "LM Studio server stopped"
         elif service_name == "mlx":
             subprocess.run(
@@ -448,9 +440,11 @@ class AIStackManager:
             if not self.check_port(self.SERVICES["ollama"]["port"]):
                 subprocess.Popen(
                     ["ollama", "serve"],
-                    stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
+                    stdout=subprocess.DEVNULL,
+                    stderr=subprocess.DEVNULL,
                 )
                 import time
+
                 time.sleep(2)
             # Run the model (loads it into memory for serving)
             proc = subprocess.Popen(
@@ -472,9 +466,15 @@ class AIStackManager:
         """Start MLX server with a specific model."""
         try:
             proc = subprocess.Popen(
-                ["python3", "-m", "mlx_lm.server",
-                 "--model", model_path_or_id,
-                 "--port", str(port)],
+                [
+                    "python3",
+                    "-m",
+                    "mlx_lm.server",
+                    "--model",
+                    model_path_or_id,
+                    "--port",
+                    str(port),
+                ],
                 stdout=subprocess.PIPE,
                 stderr=subprocess.STDOUT,
                 text=True,
@@ -787,7 +787,7 @@ class GerdsenAIOptiMac:
         info_frame = tk.Frame(self.root, bg=self.bg_color)
         info_frame.pack(fill="x", padx=10, pady=(0, 5))
         chip = self.silicon_monitor.chip_info
-        mem_gb = psutil.virtual_memory().total / (1024 ** 3)
+        mem_gb = psutil.virtual_memory().total / (1024**3)
         info_text = (
             f"SYSTEM: Apple {chip['model']} | "
             f"CPU: {chip.get('perf_cores', '?')}P+"
@@ -816,9 +816,14 @@ class GerdsenAIOptiMac:
         # Outer frame provides the border
         border = tk.Frame(parent, bg="#004400", bd=0)
         lbl = tk.Label(
-            border, text=text, bg=rest_bg, fg=self.fg_color,
+            border,
+            text=text,
+            bg=rest_bg,
+            fg=self.fg_color,
             font=("Courier New", 10, "bold"),
-            padx=12, pady=4, cursor="hand2",
+            padx=12,
+            pady=4,
+            cursor="hand2",
         )
         if width:
             lbl.config(width=width)
@@ -925,16 +930,26 @@ class GerdsenAIOptiMac:
         dur_frame = tk.Frame(tab, bg=self.bg_color)
         dur_frame.pack(fill="x", padx=5, pady=5)
         tk.Label(
-            dur_frame, text="DURATION:", bg=self.bg_color, fg=self.fg_color,
+            dur_frame,
+            text="DURATION:",
+            bg=self.bg_color,
+            fg=self.fg_color,
             font=("Courier New", 10, "bold"),
         ).pack(side="left", padx=3)
         self.duration_var = tk.StringVar(value="30s")
         for val in ["10s", "30s", "60s", "120s"]:
             tk.Radiobutton(
-                dur_frame, text=val, variable=self.duration_var, value=val,
-                bg=self.bg_color, fg=self.fg_color, selectcolor="#003300",
-                activebackground=self.bg_color, activeforeground=self.accent_color,
-                font=("Courier New", 10), command=self._update_duration,
+                dur_frame,
+                text=val,
+                variable=self.duration_var,
+                value=val,
+                bg=self.bg_color,
+                fg=self.fg_color,
+                selectcolor="#003300",
+                activebackground=self.bg_color,
+                activeforeground=self.accent_color,
+                font=("Courier New", 10),
+                command=self._update_duration,
             ).pack(side="left", padx=5)
         btn_frame = tk.Frame(tab, bg=self.bg_color)
         btn_frame.pack(fill="x", padx=5, pady=5)
@@ -974,9 +989,15 @@ class GerdsenAIOptiMac:
             ("low_power", "Low Power"),
         ]:
             tk.Radiobutton(
-                pwr_frame, text=label, variable=self.power_var, value=val,
-                bg=self.bg_color, fg=self.fg_color, selectcolor="#003300",
-                activebackground=self.bg_color, activeforeground=self.accent_color,
+                pwr_frame,
+                text=label,
+                variable=self.power_var,
+                value=val,
+                bg=self.bg_color,
+                fg=self.fg_color,
+                selectcolor="#003300",
+                activebackground=self.bg_color,
+                activeforeground=self.accent_color,
                 font=("Courier New", 10),
             ).pack(side="left", padx=5, pady=3)
         self._make_btn(pwr_frame, "APPLY", self._apply_power_profile).pack(
@@ -986,22 +1007,27 @@ class GerdsenAIOptiMac:
         misc_frame = tk.Frame(tab, bg=self.bg_color)
         misc_frame.pack(fill="x", padx=5, pady=3)
         self._make_btn(
-            misc_frame, "DISABLE SPOTLIGHT",
+            misc_frame,
+            "DISABLE SPOTLIGHT",
             lambda: self._run_opt_cmd("sudo mdutil -a -i off", "Disabling Spotlight"),
         ).pack(side="left", padx=3)
         self._make_btn(
-            misc_frame, "ENABLE SPOTLIGHT",
+            misc_frame,
+            "ENABLE SPOTLIGHT",
             lambda: self._run_opt_cmd("sudo mdutil -a -i on", "Enabling Spotlight"),
         ).pack(side="left", padx=3)
         self._make_btn(
-            misc_frame, "SET DNS CF",
+            misc_frame,
+            "SET DNS CF",
             lambda: self._run_opt_cmd(
                 "networksetup -setdnsservers Wi-Fi 1.1.1.1 1.0.0.1",
                 "Setting DNS to Cloudflare",
             ),
         ).pack(side="left", padx=3)
         self._make_btn(
-            misc_frame, "REDUCE UI", self._reduce_ui_overhead,
+            misc_frame,
+            "REDUCE UI",
+            self._reduce_ui_overhead,
         ).pack(side="left", padx=3)
 
         self._make_btn(tab, "RUN FULL OPTIMIZE", self.run_optimization).pack(
@@ -1022,12 +1048,22 @@ class GerdsenAIOptiMac:
             row = tk.Frame(status_frame, bg=self.bg_color)
             row.pack(fill="x", padx=5, pady=2)
             tk.Label(
-                row, text=f"{svc.upper()}:", bg=self.bg_color, fg=self.fg_color,
-                font=("Courier New", 10, "bold"), width=12, anchor="w",
+                row,
+                text=f"{svc.upper()}:",
+                bg=self.bg_color,
+                fg=self.fg_color,
+                font=("Courier New", 10, "bold"),
+                width=12,
+                anchor="w",
             ).pack(side="left")
             lbl = tk.Label(
-                row, text="checking...", bg=self.bg_color, fg=self.warning_color,
-                font=("Courier New", 10), width=18, anchor="w",
+                row,
+                text="checking...",
+                bg=self.bg_color,
+                fg=self.warning_color,
+                font=("Courier New", 10),
+                width=18,
+                anchor="w",
             )
             lbl.pack(side="left", padx=5)
             self.ai_status_labels[svc] = lbl
@@ -1056,35 +1092,47 @@ class GerdsenAIOptiMac:
         dir_row = tk.Frame(dir_frame, bg=self.bg_color)
         dir_row.pack(fill="x", padx=5, pady=3)
         tk.Label(
-            dir_row, text="BASE DIR:", bg=self.bg_color, fg=self.fg_color,
+            dir_row,
+            text="BASE DIR:",
+            bg=self.bg_color,
+            fg=self.fg_color,
             font=("Courier New", 10, "bold"),
         ).pack(side="left", padx=3)
         self.model_dir_var = tk.StringVar(
             value=self._current_config.get("modelBaseDir", "")
         )
         self.model_dir_entry = tk.Entry(
-            dir_row, textvariable=self.model_dir_var,
-            bg="#001100", fg=self.fg_color,
-            insertbackground=self.fg_color, font=("Courier New", 10), width=40,
+            dir_row,
+            textvariable=self.model_dir_var,
+            bg="#001100",
+            fg=self.fg_color,
+            insertbackground=self.fg_color,
+            font=("Courier New", 10),
+            width=40,
         )
         self.model_dir_entry.pack(side="left", padx=3, fill="x", expand=True)
         self._make_btn(dir_row, "BROWSE", self._browse_model_dir).pack(
             side="left", padx=3
         )
-        self._make_btn(dir_row, "SAVE", self._save_model_dir).pack(
-            side="left", padx=3
-        )
+        self._make_btn(dir_row, "SAVE", self._save_model_dir).pack(side="left", padx=3)
 
         # Pull model
         pull_frame = tk.Frame(tab, bg=self.bg_color)
         pull_frame.pack(fill="x", padx=5, pady=3)
         tk.Label(
-            pull_frame, text="PULL MODEL:", bg=self.bg_color, fg=self.fg_color,
+            pull_frame,
+            text="PULL MODEL:",
+            bg=self.bg_color,
+            fg=self.fg_color,
             font=("Courier New", 10, "bold"),
         ).pack(side="left", padx=3)
         self.model_entry = tk.Entry(
-            pull_frame, bg="#001100", fg=self.fg_color,
-            insertbackground=self.fg_color, font=("Courier New", 10), width=30,
+            pull_frame,
+            bg="#001100",
+            fg=self.fg_color,
+            insertbackground=self.fg_color,
+            font=("Courier New", 10),
+            width=30,
         )
         self.model_entry.pack(side="left", padx=3)
         self._make_btn(pull_frame, "PULL", self._pull_model).pack(side="left", padx=3)
@@ -1096,14 +1144,21 @@ class GerdsenAIOptiMac:
         serve_row1 = tk.Frame(serve_frame, bg=self.bg_color)
         serve_row1.pack(fill="x", padx=5, pady=2)
         tk.Label(
-            serve_row1, text="MODEL:", bg=self.bg_color, fg=self.fg_color,
+            serve_row1,
+            text="MODEL:",
+            bg=self.bg_color,
+            fg=self.fg_color,
             font=("Courier New", 10, "bold"),
         ).pack(side="left", padx=3)
         self.serve_model_var = tk.StringVar()
         self.serve_model_entry = tk.Entry(
-            serve_row1, textvariable=self.serve_model_var,
-            bg="#001100", fg=self.fg_color,
-            insertbackground=self.fg_color, font=("Courier New", 10), width=35,
+            serve_row1,
+            textvariable=self.serve_model_var,
+            bg="#001100",
+            fg=self.fg_color,
+            insertbackground=self.fg_color,
+            font=("Courier New", 10),
+            width=35,
         )
         self.serve_model_entry.pack(side="left", padx=3, fill="x", expand=True)
         self._make_btn(serve_row1, "PICK FILE", self._pick_model_file).pack(
@@ -1113,15 +1168,24 @@ class GerdsenAIOptiMac:
         serve_row2 = tk.Frame(serve_frame, bg=self.bg_color)
         serve_row2.pack(fill="x", padx=5, pady=2)
         tk.Label(
-            serve_row2, text="RUNTIME:", bg=self.bg_color, fg=self.fg_color,
+            serve_row2,
+            text="RUNTIME:",
+            bg=self.bg_color,
+            fg=self.fg_color,
             font=("Courier New", 10, "bold"),
         ).pack(side="left", padx=3)
         self.serve_runtime_var = tk.StringVar(value="ollama")
         for val, label in [("ollama", "Ollama"), ("mlx", "MLX")]:
             tk.Radiobutton(
-                serve_row2, text=label, variable=self.serve_runtime_var, value=val,
-                bg=self.bg_color, fg=self.fg_color, selectcolor="#003300",
-                activebackground=self.bg_color, activeforeground=self.accent_color,
+                serve_row2,
+                text=label,
+                variable=self.serve_runtime_var,
+                value=val,
+                bg=self.bg_color,
+                fg=self.fg_color,
+                selectcolor="#003300",
+                activebackground=self.bg_color,
+                activeforeground=self.accent_color,
                 font=("Courier New", 10),
             ).pack(side="left", padx=4)
         self._make_btn(serve_row2, "SERVE MODEL", self._serve_model).pack(
@@ -1156,8 +1220,12 @@ class GerdsenAIOptiMac:
         list_frame = tk.Frame(prot_frame, bg=self.bg_color)
         list_frame.pack(fill="x", padx=5, pady=3)
         self.prot_listbox = tk.Listbox(
-            list_frame, bg="#001100", fg=self.fg_color,
-            font=("Courier New", 10), height=4, selectbackground="#003300",
+            list_frame,
+            bg="#001100",
+            fg=self.fg_color,
+            font=("Courier New", 10),
+            height=4,
+            selectbackground="#003300",
         )
         self.prot_listbox.pack(side="left", fill="x", expand=True)
         btn_col = tk.Frame(list_frame, bg=self.bg_color)
@@ -1167,8 +1235,12 @@ class GerdsenAIOptiMac:
         add_frame = tk.Frame(prot_frame, bg=self.bg_color)
         add_frame.pack(fill="x", padx=5, pady=3)
         self.prot_entry = tk.Entry(
-            add_frame, bg="#001100", fg=self.fg_color,
-            insertbackground=self.fg_color, font=("Courier New", 10), width=30,
+            add_frame,
+            bg="#001100",
+            fg=self.fg_color,
+            insertbackground=self.fg_color,
+            font=("Courier New", 10),
+            width=30,
         )
         self.prot_entry.pack(side="left", padx=3)
         self.maint_terminal = self._make_tab_terminal(tab, height=12)
@@ -1185,7 +1257,9 @@ class GerdsenAIOptiMac:
 
         # Scrollable container
         canvas = tk.Canvas(tab, bg=self.bg_color, highlightthickness=0)
-        scrollbar = tk.Scrollbar(tab, orient="vertical", command=canvas.yview, bg="#002200")
+        scrollbar = tk.Scrollbar(
+            tab, orient="vertical", command=canvas.yview, bg="#002200"
+        )
         scroll_frame = tk.Frame(canvas, bg=self.bg_color)
         scroll_frame.bind(
             "<Configure>",
@@ -1196,6 +1270,7 @@ class GerdsenAIOptiMac:
 
         def _on_mousewheel(event):
             canvas.yview_scroll(-1 * (event.delta // 120), "units")
+
         canvas.bind_all("<MouseWheel>", _on_mousewheel)
 
         config = self._current_config
@@ -1207,68 +1282,113 @@ class GerdsenAIOptiMac:
         row = tk.Frame(mem_frame, bg=self.bg_color)
         row.pack(fill="x", padx=5, pady=2)
         tk.Label(
-            row, text="Warning Threshold:", bg=self.bg_color, fg=self.fg_color,
-            font=("Courier New", 10), width=22, anchor="w",
+            row,
+            text="Warning Threshold:",
+            bg=self.bg_color,
+            fg=self.fg_color,
+            font=("Courier New", 10),
+            width=22,
+            anchor="w",
         ).pack(side="left")
         self.warn_threshold_var = tk.IntVar(
             value=int(config.get("memoryWarningThreshold", 0.75) * 100)
         )
         tk.Scale(
-            row, from_=50, to=95, orient="horizontal",
+            row,
+            from_=50,
+            to=95,
+            orient="horizontal",
             variable=self.warn_threshold_var,
-            bg=self.bg_color, fg=self.fg_color, troughcolor="#002200",
-            highlightbackground=self.bg_color, font=("Courier New", 9),
-            length=200, command=lambda v: self._mark_dirty(),
+            bg=self.bg_color,
+            fg=self.fg_color,
+            troughcolor="#002200",
+            highlightbackground=self.bg_color,
+            font=("Courier New", 9),
+            length=200,
+            command=lambda v: self._mark_dirty(),
         ).pack(side="left", padx=5)
-        tk.Label(row, text="%", bg=self.bg_color, fg=self.dim_color,
-                 font=("Courier New", 10)).pack(side="left")
+        tk.Label(
+            row, text="%", bg=self.bg_color, fg=self.dim_color, font=("Courier New", 10)
+        ).pack(side="left")
 
         row = tk.Frame(mem_frame, bg=self.bg_color)
         row.pack(fill="x", padx=5, pady=2)
         tk.Label(
-            row, text="Critical Threshold:", bg=self.bg_color, fg=self.fg_color,
-            font=("Courier New", 10), width=22, anchor="w",
+            row,
+            text="Critical Threshold:",
+            bg=self.bg_color,
+            fg=self.fg_color,
+            font=("Courier New", 10),
+            width=22,
+            anchor="w",
         ).pack(side="left")
         self.crit_threshold_var = tk.IntVar(
             value=int(config.get("memoryCriticalThreshold", 0.90) * 100)
         )
         tk.Scale(
-            row, from_=60, to=99, orient="horizontal",
+            row,
+            from_=60,
+            to=99,
+            orient="horizontal",
             variable=self.crit_threshold_var,
-            bg=self.bg_color, fg=self.fg_color, troughcolor="#002200",
-            highlightbackground=self.bg_color, font=("Courier New", 9),
-            length=200, command=lambda v: self._mark_dirty(),
+            bg=self.bg_color,
+            fg=self.fg_color,
+            troughcolor="#002200",
+            highlightbackground=self.bg_color,
+            font=("Courier New", 9),
+            length=200,
+            command=lambda v: self._mark_dirty(),
         ).pack(side="left", padx=5)
-        tk.Label(row, text="%", bg=self.bg_color, fg=self.dim_color,
-                 font=("Courier New", 10)).pack(side="left")
+        tk.Label(
+            row, text="%", bg=self.bg_color, fg=self.dim_color, font=("Courier New", 10)
+        ).pack(side="left")
 
         row = tk.Frame(mem_frame, bg=self.bg_color)
         row.pack(fill="x", padx=5, pady=2)
         self.autokill_var = tk.BooleanVar(value=config.get("autoKillAtCritical", True))
         tk.Checkbutton(
-            row, text="Auto-kill non-protected processes at critical pressure",
+            row,
+            text="Auto-kill non-protected processes at critical pressure",
             variable=self.autokill_var,
-            bg=self.bg_color, fg=self.fg_color, selectcolor="#003300",
-            activebackground=self.bg_color, activeforeground=self.accent_color,
-            font=("Courier New", 10), command=self._mark_dirty,
+            bg=self.bg_color,
+            fg=self.fg_color,
+            selectcolor="#003300",
+            activebackground=self.bg_color,
+            activeforeground=self.accent_color,
+            font=("Courier New", 10),
+            command=self._mark_dirty,
         ).pack(side="left", padx=5)
 
         row = tk.Frame(mem_frame, bg=self.bg_color)
         row.pack(fill="x", padx=5, pady=2)
         tk.Label(
-            row, text="Max Process RSS (MB):", bg=self.bg_color, fg=self.fg_color,
-            font=("Courier New", 10), width=22, anchor="w",
+            row,
+            text="Max Process RSS (MB):",
+            bg=self.bg_color,
+            fg=self.fg_color,
+            font=("Courier New", 10),
+            width=22,
+            anchor="w",
         ).pack(side="left")
         self.max_rss_var = tk.StringVar(value=str(config.get("maxProcessRSSMB", 2048)))
         rss_entry = tk.Entry(
-            row, textvariable=self.max_rss_var,
-            bg="#001100", fg=self.fg_color, insertbackground=self.fg_color,
-            font=("Courier New", 10), width=8,
+            row,
+            textvariable=self.max_rss_var,
+            bg="#001100",
+            fg=self.fg_color,
+            insertbackground=self.fg_color,
+            font=("Courier New", 10),
+            width=8,
         )
         rss_entry.pack(side="left", padx=5)
         rss_entry.bind("<KeyRelease>", lambda e: self._mark_dirty())
-        tk.Label(row, text="(512-16384)", bg=self.bg_color, fg=self.dim_color,
-                 font=("Courier New", 9)).pack(side="left")
+        tk.Label(
+            row,
+            text="(512-16384)",
+            bg=self.bg_color,
+            fg=self.dim_color,
+            font=("Courier New", 9),
+        ).pack(side="left")
 
         # -- Maintenance --
         maint_s_frame = self._make_label_frame(scroll_frame, "Maintenance")
@@ -1276,13 +1396,22 @@ class GerdsenAIOptiMac:
         row = tk.Frame(maint_s_frame, bg=self.bg_color)
         row.pack(fill="x", padx=5, pady=2)
         tk.Label(
-            row, text="Interval:", bg=self.bg_color, fg=self.fg_color,
-            font=("Courier New", 10), width=22, anchor="w",
+            row,
+            text="Interval:",
+            bg=self.bg_color,
+            fg=self.fg_color,
+            font=("Courier New", 10),
+            width=22,
+            anchor="w",
         ).pack(side="left")
         self.maint_interval_var = tk.StringVar()
         interval_options = {
-            "30 min": 1800, "1 hour": 3600, "2 hours": 7200,
-            "6 hours": 21600, "12 hours": 43200, "24 hours": 86400,
+            "30 min": 1800,
+            "1 hour": 3600,
+            "2 hours": 7200,
+            "6 hours": 21600,
+            "12 hours": 43200,
+            "24 hours": 86400,
         }
         self._interval_map = interval_options
         current_sec = config.get("maintenanceIntervalSec", 21600)
@@ -1293,16 +1422,23 @@ class GerdsenAIOptiMac:
                 break
         self.maint_interval_var.set(current_label)
         interval_menu = tk.OptionMenu(
-            row, self.maint_interval_var, *interval_options.keys(),
+            row,
+            self.maint_interval_var,
+            *interval_options.keys(),
             command=lambda v: self._mark_dirty(),
         )
         interval_menu.config(
-            bg="#002200", fg=self.fg_color, font=("Courier New", 10),
-            activebackground="#004400", activeforeground=self.accent_color,
+            bg="#002200",
+            fg=self.fg_color,
+            font=("Courier New", 10),
+            activebackground="#004400",
+            activeforeground=self.accent_color,
             highlightthickness=0,
         )
         interval_menu["menu"].config(
-            bg="#001100", fg=self.fg_color, font=("Courier New", 10),
+            bg="#001100",
+            fg=self.fg_color,
+            font=("Courier New", 10),
             activebackground="#003300",
         )
         interval_menu.pack(side="left", padx=5)
@@ -1327,26 +1463,49 @@ class GerdsenAIOptiMac:
             ("custom", "Custom"),
         ]:
             tk.Radiobutton(
-                row, text=label, variable=self.dns_var, value=val,
-                bg=self.bg_color, fg=self.fg_color, selectcolor="#003300",
-                activebackground=self.bg_color, activeforeground=self.accent_color,
-                font=("Courier New", 10), command=self._mark_dirty,
+                row,
+                text=label,
+                variable=self.dns_var,
+                value=val,
+                bg=self.bg_color,
+                fg=self.fg_color,
+                selectcolor="#003300",
+                activebackground=self.bg_color,
+                activeforeground=self.accent_color,
+                font=("Courier New", 10),
+                command=self._mark_dirty,
             ).pack(side="left", padx=4)
         row = tk.Frame(dns_frame, bg=self.bg_color)
         row.pack(fill="x", padx=5, pady=2)
         tk.Label(
-            row, text="Custom DNS:", bg=self.bg_color, fg=self.fg_color,
-            font=("Courier New", 10), width=22, anchor="w",
+            row,
+            text="Custom DNS:",
+            bg=self.bg_color,
+            fg=self.fg_color,
+            font=("Courier New", 10),
+            width=22,
+            anchor="w",
         ).pack(side="left")
-        custom_dns_str = ", ".join(current_dns) if self.dns_var.get() == "custom" else ""
+        custom_dns_str = (
+            ", ".join(current_dns) if self.dns_var.get() == "custom" else ""
+        )
         self.custom_dns_var = tk.StringVar(value=custom_dns_str)
         tk.Entry(
-            row, textvariable=self.custom_dns_var,
-            bg="#001100", fg=self.fg_color, insertbackground=self.fg_color,
-            font=("Courier New", 10), width=30,
+            row,
+            textvariable=self.custom_dns_var,
+            bg="#001100",
+            fg=self.fg_color,
+            insertbackground=self.fg_color,
+            font=("Courier New", 10),
+            width=30,
         ).pack(side="left", padx=5)
-        tk.Label(row, text="(comma separated)", bg=self.bg_color, fg=self.dim_color,
-                 font=("Courier New", 9)).pack(side="left")
+        tk.Label(
+            row,
+            text="(comma separated)",
+            bg=self.bg_color,
+            fg=self.dim_color,
+            font=("Courier New", 9),
+        ).pack(side="left")
         self._make_btn(dns_frame, "APPLY DNS NOW", self._apply_dns_now).pack(
             padx=5, pady=3, anchor="w"
         )
@@ -1360,14 +1519,24 @@ class GerdsenAIOptiMac:
             row = tk.Frame(ports_frame, bg=self.bg_color)
             row.pack(fill="x", padx=5, pady=1)
             tk.Label(
-                row, text=f"{svc.upper()} Port:", bg=self.bg_color, fg=self.fg_color,
-                font=("Courier New", 10), width=22, anchor="w",
+                row,
+                text=f"{svc.upper()} Port:",
+                bg=self.bg_color,
+                fg=self.fg_color,
+                font=("Courier New", 10),
+                width=22,
+                anchor="w",
             ).pack(side="left")
             var = tk.StringVar(value=str(ports.get(svc, default_port)))
             self.port_vars[svc] = var
             entry = tk.Entry(
-                row, textvariable=var, bg="#001100", fg=self.fg_color,
-                insertbackground=self.fg_color, font=("Courier New", 10), width=8,
+                row,
+                textvariable=var,
+                bg="#001100",
+                fg=self.fg_color,
+                insertbackground=self.fg_color,
+                font=("Courier New", 10),
+                width=8,
             )
             entry.pack(side="left", padx=5)
             entry.bind("<KeyRelease>", lambda e: self._mark_dirty())
@@ -1377,38 +1546,62 @@ class GerdsenAIOptiMac:
         debloat_frame.pack(fill="x", padx=5, pady=4)
         row = tk.Frame(debloat_frame, bg=self.bg_color)
         row.pack(fill="x", padx=5, pady=3)
-        tk.Label(row, text="Preset:", bg=self.bg_color, fg=self.fg_color,
-                 font=("Courier New", 10)).pack(side="left", padx=3)
+        tk.Label(
+            row,
+            text="Preset:",
+            bg=self.bg_color,
+            fg=self.fg_color,
+            font=("Courier New", 10),
+        ).pack(side="left", padx=3)
         for preset in ["minimal", "moderate", "aggressive"]:
             color = (
-                self.fg_color if preset == "minimal"
-                else self.warning_color if preset == "moderate"
-                else self.error_color
+                self.fg_color
+                if preset == "minimal"
+                else self.warning_color if preset == "moderate" else self.error_color
             )
             border = tk.Frame(row, bg="#004400", bd=0)
             lbl = tk.Label(
-                border, text=preset.upper(), bg="#002200", fg=color,
-                font=("Courier New", 10, "bold"), padx=10, pady=3, cursor="hand2",
+                border,
+                text=preset.upper(),
+                bg="#002200",
+                fg=color,
+                font=("Courier New", 10, "bold"),
+                padx=10,
+                pady=3,
+                cursor="hand2",
             )
             lbl.pack(padx=1, pady=1)
-            lbl.bind("<Enter>", lambda e, l=lbl: l.config(bg="#004400"))
-            lbl.bind("<Leave>", lambda e, l=lbl: l.config(bg="#002200"))
-            lbl.bind("<ButtonPress-1>", lambda e, l=lbl, c=color: l.config(bg="#003300", fg=c))
-            lbl.bind("<ButtonRelease-1>", lambda e, l=lbl, p=preset: (
-                l.config(bg="#002200"),
-                self._apply_debloat(p),
-            ))
+            lbl.bind("<Enter>", lambda e, lbl_ref=lbl: lbl_ref.config(bg="#004400"))
+            lbl.bind("<Leave>", lambda e, lbl_ref=lbl: lbl_ref.config(bg="#002200"))
+            lbl.bind(
+                "<ButtonPress-1>",
+                lambda e, lbl_ref=lbl, c=color: lbl_ref.config(bg="#003300", fg=c),
+            )
+            lbl.bind(
+                "<ButtonRelease-1>",
+                lambda e, lbl_ref=lbl, p=preset: (
+                    lbl_ref.config(bg="#002200"),
+                    self._apply_debloat(p),
+                ),
+            )
             border.pack(side="left", padx=4)
         self._make_btn(
             debloat_frame, "RE-ENABLE ALL SERVICES", self._reenable_all_services
         ).pack(padx=5, pady=3, anchor="w")
         tk.Label(
-            debloat_frame, text="Currently disabled:", bg=self.bg_color,
-            fg=self.dim_color, font=("Courier New", 9),
+            debloat_frame,
+            text="Currently disabled:",
+            bg=self.bg_color,
+            fg=self.dim_color,
+            font=("Courier New", 9),
         ).pack(padx=5, anchor="w")
         self.disabled_svc_listbox = tk.Listbox(
-            debloat_frame, bg="#001100", fg=self.warning_color,
-            font=("Courier New", 9), height=4, selectbackground="#003300",
+            debloat_frame,
+            bg="#001100",
+            fg=self.warning_color,
+            font=("Courier New", 9),
+            height=4,
+            selectbackground="#003300",
         )
         self.disabled_svc_listbox.pack(fill="x", padx=5, pady=2)
         self._refresh_disabled_services()
@@ -1418,36 +1611,51 @@ class GerdsenAIOptiMac:
         btn_row.pack(fill="x", padx=5, pady=8)
         save_border = tk.Frame(btn_row, bg=self.accent_color, bd=0)
         save_lbl = tk.Label(
-            save_border, text="SAVE ALL SETTINGS", bg="#003300",
-            fg=self.accent_color, font=("Courier New", 11, "bold"),
-            padx=20, pady=6, cursor="hand2",
+            save_border,
+            text="SAVE ALL SETTINGS",
+            bg="#003300",
+            fg=self.accent_color,
+            font=("Courier New", 11, "bold"),
+            padx=20,
+            pady=6,
+            cursor="hand2",
         )
         save_lbl.pack(padx=1, pady=1)
         save_lbl.bind("<Enter>", lambda e: save_lbl.config(bg="#005500"))
         save_lbl.bind("<Leave>", lambda e: save_lbl.config(bg="#003300"))
         save_lbl.bind("<ButtonPress-1>", lambda e: save_lbl.config(bg="#006600"))
-        save_lbl.bind("<ButtonRelease-1>", lambda e: (
-            save_lbl.config(bg="#003300"), self._save_settings()
-        ))
+        save_lbl.bind(
+            "<ButtonRelease-1>",
+            lambda e: (save_lbl.config(bg="#003300"), self._save_settings()),
+        )
         save_border.pack(side="left", padx=5)
         self.save_indicator = tk.Label(
-            btn_row, text="", bg=self.bg_color, fg=self.accent_color,
+            btn_row,
+            text="",
+            bg=self.bg_color,
+            fg=self.accent_color,
             font=("Courier New", 10),
         )
         self.save_indicator.pack(side="left", padx=10)
         reset_border = tk.Frame(btn_row, bg=self.error_color, bd=0)
         reset_lbl = tk.Label(
-            reset_border, text="RESET DEFAULTS", bg="#220000",
-            fg=self.error_color, font=("Courier New", 10, "bold"),
-            padx=10, pady=4, cursor="hand2",
+            reset_border,
+            text="RESET DEFAULTS",
+            bg="#220000",
+            fg=self.error_color,
+            font=("Courier New", 10, "bold"),
+            padx=10,
+            pady=4,
+            cursor="hand2",
         )
         reset_lbl.pack(padx=1, pady=1)
         reset_lbl.bind("<Enter>", lambda e: reset_lbl.config(bg="#440000"))
         reset_lbl.bind("<Leave>", lambda e: reset_lbl.config(bg="#220000"))
         reset_lbl.bind("<ButtonPress-1>", lambda e: reset_lbl.config(bg="#550000"))
-        reset_lbl.bind("<ButtonRelease-1>", lambda e: (
-            reset_lbl.config(bg="#220000"), self._reset_settings()
-        ))
+        reset_lbl.bind(
+            "<ButtonRelease-1>",
+            lambda e: (reset_lbl.config(bg="#220000"), self._reset_settings()),
+        )
         reset_border.pack(side="right", padx=5)
 
         # Settings terminal
@@ -1504,13 +1712,15 @@ class GerdsenAIOptiMac:
         self.save_indicator.config(text="Saved!", fg=self.accent_color)
         self._write_to(
             self.settings_terminal,
-            "Configuration saved to ~/.optimac/config.json", "accent",
+            "Configuration saved to ~/.optimac/config.json",
+            "accent",
         )
         self.root.after(3000, lambda: self.save_indicator.config(text=""))
 
     def _reset_settings(self):
         if not messagebox.askyesno(
-            "Reset Settings", "Reset all settings to defaults? This cannot be undone.",
+            "Reset Settings",
+            "Reset all settings to defaults? This cannot be undone.",
         ):
             return
         config = self.config_manager.reset_to_defaults()
@@ -1549,20 +1759,26 @@ class GerdsenAIOptiMac:
         def run():
             self._write_to(
                 self.settings_terminal,
-                f"Applying DNS: {', '.join(servers)} on {iface}", "command",
+                f"Applying DNS: {', '.join(servers)} on {iface}",
+                "command",
             )
             try:
                 result = subprocess.run(
                     cmd, shell=True, capture_output=True, text=True, timeout=10
                 )
                 if result.returncode == 0:
-                    self._write_to(self.settings_terminal, "DNS applied successfully", "accent")
+                    self._write_to(
+                        self.settings_terminal, "DNS applied successfully", "accent"
+                    )
                     subprocess.run("dscacheutil -flushcache", shell=True, timeout=5)
-                    self._write_to(self.settings_terminal, "DNS cache flushed", "accent")
+                    self._write_to(
+                        self.settings_terminal, "DNS cache flushed", "accent"
+                    )
                 else:
                     self._write_to(
                         self.settings_terminal,
-                        f"DNS apply failed: {result.stderr.strip()[:80]}", "error",
+                        f"DNS apply failed: {result.stderr.strip()[:80]}",
+                        "error",
                     )
             except Exception as e:
                 self._write_to(self.settings_terminal, f"Error: {e}", "error")
@@ -1586,17 +1802,23 @@ class GerdsenAIOptiMac:
                 try:
                     subprocess.run(
                         ["launchctl", "disable", f"user/{uid}/{svc}"],
-                        capture_output=True, timeout=5,
+                        capture_output=True,
+                        timeout=5,
                     )
                     subprocess.run(
                         ["launchctl", "bootout", f"user/{uid}/{svc}"],
-                        capture_output=True, timeout=5,
+                        capture_output=True,
+                        timeout=5,
                     )
                     if svc not in disabled:
                         disabled.append(svc)
-                    self._write_to(self.settings_terminal, f"  Disabled: {svc}", "accent")
+                    self._write_to(
+                        self.settings_terminal, f"  Disabled: {svc}", "accent"
+                    )
                 except Exception as e:
-                    self._write_to(self.settings_terminal, f"  Failed: {svc} ({e})", "error")
+                    self._write_to(
+                        self.settings_terminal, f"  Failed: {svc} ({e})", "error"
+                    )
             self._current_config["disabledServices"] = disabled
             self.config_manager.save(self._current_config)
             self.root.after(0, self._refresh_disabled_services)
@@ -1611,24 +1833,32 @@ class GerdsenAIOptiMac:
     def _reenable_all_services(self):
         disabled = self._current_config.get("disabledServices", [])
         if not disabled:
-            self._write_to(self.settings_terminal, "No disabled services to re-enable", "warning")
+            self._write_to(
+                self.settings_terminal, "No disabled services to re-enable", "warning"
+            )
             return
 
         def run():
             uid = str(os.getuid())
             self._write_to(
                 self.settings_terminal,
-                f"Re-enabling {len(disabled)} services...", "warning",
+                f"Re-enabling {len(disabled)} services...",
+                "warning",
             )
             for svc in list(disabled):
                 try:
                     subprocess.run(
                         ["launchctl", "enable", f"user/{uid}/{svc}"],
-                        capture_output=True, timeout=5,
+                        capture_output=True,
+                        timeout=5,
                     )
-                    self._write_to(self.settings_terminal, f"  Enabled: {svc}", "accent")
+                    self._write_to(
+                        self.settings_terminal, f"  Enabled: {svc}", "accent"
+                    )
                 except Exception as e:
-                    self._write_to(self.settings_terminal, f"  Failed: {svc} ({e})", "error")
+                    self._write_to(
+                        self.settings_terminal, f"  Failed: {svc} ({e})", "error"
+                    )
             self._current_config["disabledServices"] = []
             self.config_manager.save(self._current_config)
             self.root.after(0, self._refresh_disabled_services)
@@ -1643,11 +1873,26 @@ class GerdsenAIOptiMac:
 
     def _reduce_ui_overhead(self):
         cmds = [
-            ("Reduce motion", "defaults write com.apple.universalaccess reduceMotion -bool true"),
-            ("Reduce transparency", "defaults write com.apple.universalaccess reduceTransparency -bool true"),
-            ("Disable animations", "defaults write NSGlobalDomain NSAutomaticWindowAnimationsEnabled -bool false"),
-            ("Fast Mission Control", "defaults write com.apple.dock expose-animation-duration -float 0.1"),
-            ("Fast Dock hide", "defaults write com.apple.dock autohide-time-modifier -float 0"),
+            (
+                "Reduce motion",
+                "defaults write com.apple.universalaccess reduceMotion -bool true",
+            ),
+            (
+                "Reduce transparency",
+                "defaults write com.apple.universalaccess reduceTransparency -bool true",
+            ),
+            (
+                "Disable animations",
+                "defaults write NSGlobalDomain NSAutomaticWindowAnimationsEnabled -bool false",
+            ),
+            (
+                "Fast Mission Control",
+                "defaults write com.apple.dock expose-animation-duration -float 0.1",
+            ),
+            (
+                "Fast Dock hide",
+                "defaults write com.apple.dock autohide-time-modifier -float 0",
+            ),
         ]
 
         def run():
@@ -1659,7 +1904,9 @@ class GerdsenAIOptiMac:
                 except Exception as e:
                     self._write_to(self.opt_terminal, f"   FAIL: {e}", "error")
             subprocess.run("killall Dock", shell=True, capture_output=True, timeout=5)
-            self._write_to(self.opt_terminal, "UI overhead reduced - Dock restarted", "accent")
+            self._write_to(
+                self.opt_terminal, "UI overhead reduced - Dock restarted", "accent"
+            )
 
         threading.Thread(target=run, daemon=True).start()
 
@@ -1671,12 +1918,18 @@ class GerdsenAIOptiMac:
         status_frame.pack(fill="x", side="bottom")
         status_frame.pack_propagate(False)
         self.status_label = tk.Label(
-            status_frame, text="READY", bg="#001100", fg=self.fg_color,
+            status_frame,
+            text="READY",
+            bg="#001100",
+            fg=self.fg_color,
             font=("Courier New", 10, "bold"),
         )
         self.status_label.pack(side="left", padx=10, pady=4)
         self.sudo_label = tk.Label(
-            status_frame, text="", bg="#001100", fg=self.warning_color,
+            status_frame,
+            text="",
+            bg="#001100",
+            fg=self.warning_color,
             font=("Courier New", 10),
         )
         self.sudo_label.pack(side="right", padx=10, pady=4)
@@ -1715,9 +1968,7 @@ class GerdsenAIOptiMac:
                 ["sudo", "-n", "pmset", "-g"],
             ]:
                 try:
-                    result = subprocess.run(
-                        test_cmd, capture_output=True, timeout=3
-                    )
+                    result = subprocess.run(test_cmd, capture_output=True, timeout=3)
                     if result.returncode == 0:
                         self.has_sudo = True
                         break
@@ -1820,7 +2071,9 @@ class GerdsenAIOptiMac:
             try:
                 result = subprocess.run(
                     ["sudo", "powermetrics", "--samplers", "smc", "-n", "1"],
-                    capture_output=True, text=True, timeout=3,
+                    capture_output=True,
+                    text=True,
+                    timeout=3,
                 )
                 for line in result.stdout.split("\n"):
                     if "CPU die temperature" in line:
@@ -1860,7 +2113,8 @@ class GerdsenAIOptiMac:
         self.status_label.config(text="CPU STRESS TEST")
         self._write_to(
             self.test_terminal,
-            f"Starting CPU stress test ({self.stress_duration}s)...", "warning",
+            f"Starting CPU stress test ({self.stress_duration}s)...",
+            "warning",
         )
         threading.Thread(target=self.cpu_stress_test, daemon=True).start()
 
@@ -1868,7 +2122,9 @@ class GerdsenAIOptiMac:
         try:
             duration = self.stress_duration
             cores_to_use = self.silicon_monitor.chip_info["cpu_cores"]
-            self.output_queue.put(("stress_update", f"Utilizing {cores_to_use} CPU cores"))
+            self.output_queue.put(
+                ("stress_update", f"Utilizing {cores_to_use} CPU cores")
+            )
             stop_event = multiprocessing.Event()
             processes = []
             for i in range(cores_to_use):
@@ -1910,7 +2166,9 @@ class GerdsenAIOptiMac:
         try:
             available_mb = psutil.virtual_memory().available // (1024 * 1024)
             target_mb = min(available_mb // 2, 1000)
-            self.output_queue.put(("stress_update", f"Allocating {target_mb}MB of memory"))
+            self.output_queue.put(
+                ("stress_update", f"Allocating {target_mb}MB of memory")
+            )
             result = self.stress_engine.memory_stress_worker(target_mb)
             self.output_queue.put(
                 ("stress_complete", f"Memory test completed - allocated {result}MB")
@@ -1928,7 +2186,8 @@ class GerdsenAIOptiMac:
         self.status_label.config(text="COMBINED STRESS TEST")
         self._write_to(
             self.test_terminal,
-            f"Starting combined stress ({self.stress_duration}s)...", "warning",
+            f"Starting combined stress ({self.stress_duration}s)...",
+            "warning",
         )
 
         def combined():
@@ -1949,7 +2208,9 @@ class GerdsenAIOptiMac:
                     procs.append(p)
                 avail = psutil.virtual_memory().available
                 target = min(avail // (1024 * 1024) // 4, 512)
-                self.output_queue.put(("stress_update", f"Allocating {target}MB memory"))
+                self.output_queue.put(
+                    ("stress_update", f"Allocating {target}MB memory")
+                )
                 self.stress_engine.memory_stress_worker(target)
                 for i in range(dur):
                     if not self.stress_testing:
@@ -1962,7 +2223,9 @@ class GerdsenAIOptiMac:
                     p.join(timeout=5)
                     if p.is_alive():
                         p.terminate()
-                self.output_queue.put(("stress_complete", "Combined stress test completed"))
+                self.output_queue.put(
+                    ("stress_complete", "Combined stress test completed")
+                )
             except Exception as e:
                 self.output_queue.put(("stress_error", f"Combined test error: {e}"))
             finally:
@@ -1981,22 +2244,36 @@ class GerdsenAIOptiMac:
     def optimization_thread(self):
         if self.has_sudo:
             commands = [
-                ("Clearing DNS cache", "dscacheutil -flushcache && killall -HUP mDNSResponder"),
+                (
+                    "Clearing DNS cache",
+                    "dscacheutil -flushcache && killall -HUP mDNSResponder",
+                ),
                 ("Purging inactive memory", "purge"),
                 ("Enabling high performance mode", "pmset -a highpowermode 1"),
                 ("Disabling sleep", "pmset -a sleep 0"),
-                ("Clearing system caches", "rm -rf /System/Library/Caches/* 2>/dev/null || true"),
-                ("Rebuilding font cache",
-                 "atsutil databases -removeUser && atsutil server -shutdown && atsutil server -ping"),
+                (
+                    "Clearing system caches",
+                    "rm -rf /System/Library/Caches/* 2>/dev/null || true",
+                ),
+                (
+                    "Rebuilding font cache",
+                    "atsutil databases -removeUser && atsutil server -shutdown && atsutil server -ping",
+                ),
             ]
         else:
             commands = [
                 ("Clearing user DNS cache", "dscacheutil -flushcache"),
-                ("Clearing user caches", "rm -rf ~/Library/Caches/com.apple.* 2>/dev/null || true"),
+                (
+                    "Clearing user caches",
+                    "rm -rf ~/Library/Caches/com.apple.* 2>/dev/null || true",
+                ),
                 ("Clearing user font cache", "atsutil databases -removeUser"),
                 ("Restarting Dock", "killall Dock"),
                 ("Clearing user logs", "rm -rf ~/Library/Logs/* 2>/dev/null || true"),
-                ("Restarting user services", "launchctl kickstart -k gui/$(id -u)/com.apple.Dock"),
+                (
+                    "Restarting user services",
+                    "launchctl kickstart -k gui/$(id -u)/com.apple.Dock",
+                ),
             ]
         for description, cmd in commands:
             self.output_queue.put(("optimize_step", (description, cmd)))
@@ -2017,6 +2294,7 @@ class GerdsenAIOptiMac:
                     self._write_to(self.opt_terminal, f"   FAIL: {err}", "error")
             except Exception as e:
                 self._write_to(self.opt_terminal, f"   ERROR: {e}", "error")
+
         threading.Thread(target=run, daemon=True).start()
 
     def _purge_memory(self):
@@ -2063,6 +2341,7 @@ class GerdsenAIOptiMac:
             self._write_to(self.ai_terminal, msg, "accent")
             time.sleep(2)
             self._refresh_ai_status()
+
         threading.Thread(target=run, daemon=True).start()
 
     def _ai_stop(self, service):
@@ -2071,6 +2350,7 @@ class GerdsenAIOptiMac:
             self._write_to(self.ai_terminal, msg, "warning")
             time.sleep(1)
             self._refresh_ai_status()
+
         threading.Thread(target=run, daemon=True).start()
 
     def _refresh_ai_status(self):
@@ -2094,6 +2374,7 @@ class GerdsenAIOptiMac:
                     text=icon_map.get(status, status),
                     fg=color_map.get(status, self.fg_color),
                 )
+
         threading.Thread(target=run, daemon=True).start()
 
     def _list_models(self):
@@ -2102,6 +2383,7 @@ class GerdsenAIOptiMac:
             out = self.ai_manager.list_ollama_models()
             for line in out.split("\n"):
                 self._write_to(self.ai_terminal, f"  {line}", "accent")
+
         threading.Thread(target=run, daemon=True).start()
 
     def _pull_model(self):
@@ -2127,11 +2409,13 @@ class GerdsenAIOptiMac:
                 )
             else:
                 self._write_to(self.ai_terminal, f"Failed to pull {name}", "error")
+
         threading.Thread(target=run, daemon=True).start()
 
     def _browse_models(self):
         """Browse filesystem for downloaded models."""
-        from tkinter import filedialog
+        from tkinter import filedialog  # noqa: F401 — used below conditionally
+
         base = self._current_config.get("modelBaseDir", "")
         search_dirs = [base] if base and os.path.isdir(base) else []
         # Add common model directories
@@ -2147,7 +2431,9 @@ class GerdsenAIOptiMac:
                 search_dirs.append(d)
 
         def run():
-            self._write_to(self.ai_terminal, "Scanning for downloaded models...", "command")
+            self._write_to(
+                self.ai_terminal, "Scanning for downloaded models...", "command"
+            )
             found = []
             for search_dir in search_dirs:
                 self._write_to(self.ai_terminal, f"  Scanning: {search_dir}", "dim")
@@ -2158,7 +2444,16 @@ class GerdsenAIOptiMac:
                             dirs.clear()
                             continue
                         for f in files:
-                            if f.endswith((".gguf", ".bin", ".safetensors", ".pth", ".pt", ".onnx")):
+                            if f.endswith(
+                                (
+                                    ".gguf",
+                                    ".bin",
+                                    ".safetensors",
+                                    ".pth",
+                                    ".pt",
+                                    ".onnx",
+                                )
+                            ):
                                 full = os.path.join(root_dir, f)
                                 size_mb = os.path.getsize(full) / (1024 * 1024)
                                 if size_mb > 50:
@@ -2169,7 +2464,8 @@ class GerdsenAIOptiMac:
                 found.sort(key=lambda x: -x[1])
                 self._write_to(
                     self.ai_terminal,
-                    f"Found {len(found)} model files:", "accent",
+                    f"Found {len(found)} model files:",
+                    "accent",
                 )
                 for path, size in found[:30]:
                     if size > 1024:
@@ -2177,20 +2473,26 @@ class GerdsenAIOptiMac:
                     else:
                         size_str = f"{size:.0f}MB"
                     short = path.replace(home, "~")
-                    self._write_to(self.ai_terminal, f"  [{size_str:>8}] {short}", "success")
+                    self._write_to(
+                        self.ai_terminal, f"  [{size_str:>8}] {short}", "success"
+                    )
             else:
                 self._write_to(
                     self.ai_terminal,
                     "No model files found. Set a model base directory in the Model Directory section.",
                     "warning",
                 )
+
         threading.Thread(target=run, daemon=True).start()
 
     def _browse_model_dir(self):
         """Open folder picker for model base directory."""
         from tkinter import filedialog
+
         current = self.model_dir_var.get()
-        initial = current if current and os.path.isdir(current) else os.path.expanduser("~")
+        initial = (
+            current if current and os.path.isdir(current) else os.path.expanduser("~")
+        )
         chosen = filedialog.askdirectory(
             title="Select Model Base Directory",
             initialdir=initial,
@@ -2202,18 +2504,23 @@ class GerdsenAIOptiMac:
         """Save model base directory to config."""
         path = self.model_dir_var.get().strip()
         if path and not os.path.isdir(path):
-            self._write_to(self.ai_terminal, f"Directory does not exist: {path}", "error")
+            self._write_to(
+                self.ai_terminal, f"Directory does not exist: {path}", "error"
+            )
             return
         self._current_config["modelBaseDir"] = path
         self.config_manager.save(self._current_config)
         if path:
-            self._write_to(self.ai_terminal, f"Model base directory set: {path}", "accent")
+            self._write_to(
+                self.ai_terminal, f"Model base directory set: {path}", "accent"
+            )
         else:
             self._write_to(self.ai_terminal, "Model base directory cleared", "warning")
 
     def _pick_model_file(self):
         """Open file picker for a model file to serve."""
         from tkinter import filedialog
+
         base = self.model_dir_var.get() if hasattr(self, "model_dir_var") else ""
         initial = base if base and os.path.isdir(base) else os.path.expanduser("~")
         chosen = filedialog.askopenfilename(
@@ -2234,7 +2541,9 @@ class GerdsenAIOptiMac:
         """Start serving a model with the selected runtime."""
         model = self.serve_model_var.get().strip()
         if not model:
-            self._write_to(self.ai_terminal, "Enter a model name or path first", "warning")
+            self._write_to(
+                self.ai_terminal, "Enter a model name or path first", "warning"
+            )
             return
         runtime = self.serve_runtime_var.get()
 
@@ -2242,17 +2551,20 @@ class GerdsenAIOptiMac:
             if runtime == "ollama":
                 self._write_to(
                     self.ai_terminal,
-                    f"Loading model into Ollama: {model}", "command",
+                    f"Loading model into Ollama: {model}",
+                    "command",
                 )
                 self._write_to(
                     self.ai_terminal,
-                    "Starting Ollama server if needed...", "dim",
+                    "Starting Ollama server if needed...",
+                    "dim",
                 )
                 proc = self.ai_manager.serve_model_ollama(model)
                 if proc is None:
                     self._write_to(
                         self.ai_terminal,
-                        "Ollama not installed. Install from https://ollama.com", "error",
+                        "Ollama not installed. Install from https://ollama.com",
+                        "error",
                     )
                     return
                 # Read output
@@ -2266,7 +2578,8 @@ class GerdsenAIOptiMac:
                     pass
                 self._write_to(
                     self.ai_terminal,
-                    f"Model '{model}' loaded in Ollama (API at :11434)", "accent",
+                    f"Model '{model}' loaded in Ollama (API at :11434)",
+                    "accent",
                 )
                 time.sleep(1)
                 self._refresh_ai_status()
@@ -2275,7 +2588,8 @@ class GerdsenAIOptiMac:
                 port = self.ai_manager.SERVICES["mlx"]["port"]
                 self._write_to(
                     self.ai_terminal,
-                    f"Starting MLX server with: {model} on port {port}", "command",
+                    f"Starting MLX server with: {model} on port {port}",
+                    "command",
                 )
                 # Stop any existing MLX server first
                 self.ai_manager.stop_service("mlx")
@@ -2284,7 +2598,8 @@ class GerdsenAIOptiMac:
                 if proc is None:
                     self._write_to(
                         self.ai_terminal,
-                        "MLX not available. Install: pip install mlx-lm", "error",
+                        "MLX not available. Install: pip install mlx-lm",
+                        "error",
                     )
                     return
                 # Read first few lines of output
@@ -2302,7 +2617,8 @@ class GerdsenAIOptiMac:
                     pass
                 self._write_to(
                     self.ai_terminal,
-                    f"MLX server started on port {port}", "accent",
+                    f"MLX server started on port {port}",
+                    "accent",
                 )
                 time.sleep(1)
                 self._refresh_ai_status()
@@ -2311,6 +2627,7 @@ class GerdsenAIOptiMac:
 
     def _show_running_models(self):
         """Show currently running/loaded models."""
+
         def run():
             self._write_to(self.ai_terminal, "Checking running models...", "command")
             # Ollama running models
@@ -2324,10 +2641,12 @@ class GerdsenAIOptiMac:
             if self.ai_manager.check_port(port):
                 self._write_to(
                     self.ai_terminal,
-                    f"MLX server is running on port {port}", "accent",
+                    f"MLX server is running on port {port}",
+                    "accent",
                 )
             else:
                 self._write_to(self.ai_terminal, "MLX server: not running", "dim")
+
         threading.Thread(target=run, daemon=True).start()
 
     # ================================================================
@@ -2337,7 +2656,10 @@ class GerdsenAIOptiMac:
         steps = [
             ("Check memory pressure", "memory_pressure"),
             ("Flush DNS cache", "dscacheutil -flushcache"),
-            ("Clear user caches", "rm -rf ~/Library/Caches/com.apple.* 2>/dev/null || true"),
+            (
+                "Clear user caches",
+                "rm -rf ~/Library/Caches/com.apple.* 2>/dev/null || true",
+            ),
             ("Clear user logs", "rm -rf ~/Library/Logs/* 2>/dev/null || true"),
             ("Rebuild Spotlight index", "mdutil -E / 2>/dev/null || true"),
             ("Flush routes", "sudo route -n flush 2>/dev/null || true"),
@@ -2346,16 +2668,26 @@ class GerdsenAIOptiMac:
         ]
 
         def run():
-            self._write_to(self.maint_terminal, "=== MAINTENANCE CYCLE STARTED ===", "accent")
+            self._write_to(
+                self.maint_terminal, "=== MAINTENANCE CYCLE STARTED ===", "accent"
+            )
             for i, (desc, cmd) in enumerate(steps, 1):
-                self._write_to(self.maint_terminal, f"[{i}/{len(steps)}] {desc}...", "command")
+                self._write_to(
+                    self.maint_terminal, f"[{i}/{len(steps)}] {desc}...", "command"
+                )
                 try:
                     subprocess.run(cmd, shell=True, capture_output=True, timeout=30)
-                    self._write_to(self.maint_terminal, f"    OK: {desc} complete", "accent")
+                    self._write_to(
+                        self.maint_terminal, f"    OK: {desc} complete", "accent"
+                    )
                 except Exception as e:
-                    self._write_to(self.maint_terminal, f"    FAIL: {desc} ({e})", "error")
+                    self._write_to(
+                        self.maint_terminal, f"    FAIL: {desc} ({e})", "error"
+                    )
                 time.sleep(0.5)
-            self._write_to(self.maint_terminal, "=== MAINTENANCE CYCLE COMPLETE ===", "accent")
+            self._write_to(
+                self.maint_terminal, "=== MAINTENANCE CYCLE COMPLETE ===", "accent"
+            )
             self.status_label.config(text="READY")
 
         self.status_label.config(text="MAINTENANCE RUNNING")
@@ -2366,8 +2698,8 @@ class GerdsenAIOptiMac:
             try:
                 mem = psutil.virtual_memory()
                 pct = mem.percent
-                avail_gb = mem.available / (1024 ** 3)
-                total_gb = mem.total / (1024 ** 3)
+                avail_gb = mem.available / (1024**3)
+                total_gb = mem.total / (1024**3)
                 bar_len = 30
                 filled = int(bar_len * pct / 100)
                 bar = "#" * filled + "-" * (bar_len - filled)
@@ -2383,14 +2715,19 @@ class GerdsenAIOptiMac:
                 self._write_to(self.maint_terminal, f"  [{bar}] {pct:.1f}%", tag)
                 self._write_to(
                     self.maint_terminal,
-                    f"  Available: {avail_gb:.1f}GB / {total_gb:.1f}GB", tag,
+                    f"  Available: {avail_gb:.1f}GB / {total_gb:.1f}GB",
+                    tag,
                 )
                 self._write_to(
                     self.maint_terminal,
-                    f"  Thresholds: warn={warn:.0f}% crit={crit:.0f}%", "dim",
+                    f"  Thresholds: warn={warn:.0f}% crit={crit:.0f}%",
+                    "dim",
                 )
             except Exception as e:
-                self._write_to(self.maint_terminal, f"Error checking memory: {e}", "error")
+                self._write_to(
+                    self.maint_terminal, f"Error checking memory: {e}", "error"
+                )
+
         threading.Thread(target=run, daemon=True).start()
 
     def _view_config(self):
@@ -2414,7 +2751,9 @@ class GerdsenAIOptiMac:
         self.prot_entry.delete(0, tk.END)
         self._load_protected_list()
         self._current_config = self.config_manager.load()
-        self._write_to(self.maint_terminal, f"Added '{name}' to protected list", "accent")
+        self._write_to(
+            self.maint_terminal, f"Added '{name}' to protected list", "accent"
+        )
 
     def _remove_protected(self):
         sel = self.prot_listbox.curselection()
@@ -2424,7 +2763,9 @@ class GerdsenAIOptiMac:
         self.config_manager.remove_protected(name)
         self._load_protected_list()
         self._current_config = self.config_manager.load()
-        self._write_to(self.maint_terminal, f"Removed '{name}' from protected list", "warning")
+        self._write_to(
+            self.maint_terminal, f"Removed '{name}' from protected list", "warning"
+        )
 
     def clear_terminal(self):
         self.terminal_output.config(state="normal")
@@ -2434,7 +2775,9 @@ class GerdsenAIOptiMac:
 
     def quit_app(self):
         if self._config_dirty:
-            if messagebox.askyesno("Unsaved Settings", "Save settings before quitting?"):
+            if messagebox.askyesno(
+                "Unsaved Settings", "Save settings before quitting?"
+            ):
                 self._save_settings()
         self.monitoring = False
         self.stress_testing = False

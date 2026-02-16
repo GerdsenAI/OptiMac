@@ -8,7 +8,7 @@ import time
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent.parent))
-from gerdsenai_optimac.mcp.client import MCPClient
+from gerdsenai_optimac.mcp.client import MCPClient  # noqa: E402
 
 
 def mem_snapshot():
@@ -52,15 +52,17 @@ async def main():
     # GPU before (via MCP)
     gpu_b = await client.execute_tool("optimac_gpu_stats", {})
     gpu_b_txt = "".join(c.get("text", "") for c in gpu_b.get("content", []))
-    gpu_lines_b = [l.strip() for l in gpu_b_txt.split("\n") if "active" in l.lower()]
+    gpu_lines_b = [
+        line.strip() for line in gpu_b_txt.split("\n") if "active" in line.lower()
+    ]
 
     used_b, total_b, pct_b = mem_snapshot()
     print(f"BEFORE: Memory {used_b}MB/{total_b}MB ({pct_b}%)")
-    for l in gpu_lines_b[:2]:
-        print(f"  {l}")
+    for line in gpu_lines_b[:2]:
+        print(f"  {line}")
 
     # Benchmark
-    print(f"\n⏳ Benchmarking llama3:latest...")
+    print("\n⏳ Benchmarking llama3:latest...")
     t0 = time.time()
 
     result = await asyncio.wait_for(
@@ -87,18 +89,23 @@ async def main():
     used_a, total_a, pct_a = mem_snapshot()
     gpu_a = await client.execute_tool("optimac_gpu_stats", {})
     gpu_a_txt = "".join(c.get("text", "") for c in gpu_a.get("content", []))
-    gpu_lines_a = [l.strip() for l in gpu_a_txt.split("\n") if "active" in l.lower()]
+    gpu_lines_a = [
+        line.strip() for line in gpu_a_txt.split("\n") if "active" in line.lower()
+    ]
 
     print(f"\n✅ BENCHMARK COMPLETE ({wall}s wall clock)")
     print(f"\n{output}")
 
     print(f"\nAFTER:  Memory {used_a}MB/{total_a}MB ({pct_a}%)")
-    for l in gpu_lines_a[:2]:
-        print(f"  {l}")
+    for line in gpu_lines_a[:2]:
+        print(f"  {line}")
 
-    s = lambda v: f"+{v}" if v > 0 else str(v)
+    def sign(v):
+        return f"+{v}" if v > 0 else str(v)
+
     print(
-        f"\nDELTA: Mem {s(used_a - used_b)}MB | Pressure {s(round(pct_a - pct_b, 1))}%"
+        f"\nDELTA: Mem {sign(used_a - used_b)}MB"
+        f" | Pressure {sign(round(pct_a - pct_b, 1))}%"
     )
 
     await client.disconnect()

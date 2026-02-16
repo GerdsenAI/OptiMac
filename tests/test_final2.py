@@ -7,7 +7,7 @@ import time
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent.parent))
-from gerdsenai_optimac.mcp.client import MCPClient
+from gerdsenai_optimac.mcp.client import MCPClient  # noqa: E402
 
 
 async def main():
@@ -59,7 +59,7 @@ async def main():
             print(f"   {preview}")
 
         except asyncio.TimeoutError:
-            print(f"   ⏰ TIMEOUT")
+            print("   ⏰ TIMEOUT")
         except Exception as e:
             print(f"   💥 {e}")
         print()
